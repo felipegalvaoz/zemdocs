@@ -61,7 +61,7 @@ export default function EmpresasPage() {
           <div className="grid auto-rows-min gap-4 md:grid-cols-4">
             <EmpresasStats />
           </div>
-          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min overflow-hidden">
             <EmpresasTable />
           </div>
         </div>

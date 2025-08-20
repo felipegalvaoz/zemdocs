@@ -151,9 +151,9 @@ export function EmpresasTable() {
           Gerenciar empresas cadastradas no sistema
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0">
         <div className="space-y-4">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 px-6">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por razão social, CNPJ ou nome fantasia..."
@@ -162,77 +162,79 @@ export function EmpresasTable() {
               className="max-w-sm"
             />
           </div>
-          
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>CNPJ</TableHead>
-                <TableHead>Razão Social</TableHead>
-                <TableHead>Nome Fantasia</TableHead>
-                <TableHead>Situação</TableHead>
-                <TableHead>Porte</TableHead>
-                <TableHead>Localização</TableHead>
-                <TableHead>Data Abertura</TableHead>
-                <TableHead className="w-[70px]">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmpresas.map((empresa) => (
-                <TableRow key={empresa.id}>
-                  <TableCell className="font-mono text-sm">
-                    {empresa.cnpj}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {empresa.razao_social}
-                  </TableCell>
-                  <TableCell>
-                    {empresa.nome_fantasia || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getSituacaoVariant(empresa.situacao_cadastral)}>
-                      {empresa.situacao_cadastral}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {empresa.porte}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {empresa.municipio}/{empresa.uf}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatDate(empresa.data_abertura)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Visualizar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>CNPJ</TableHead>
+                  <TableHead>Razão Social</TableHead>
+                  <TableHead>Nome Fantasia</TableHead>
+                  <TableHead>Situação</TableHead>
+                  <TableHead>Porte</TableHead>
+                  <TableHead>Localização</TableHead>
+                  <TableHead>Data Abertura</TableHead>
+                  <TableHead className="w-[70px]">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
+              </TableHeader>
+              <TableBody>
+                {filteredEmpresas.map((empresa) => (
+                  <TableRow key={empresa.id}>
+                    <TableCell className="font-mono text-sm">
+                      {empresa.cnpj}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {empresa.razao_social}
+                    </TableCell>
+                    <TableCell>
+                      {empresa.nome_fantasia || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getSituacaoVariant(empresa.situacao_cadastral)}>
+                        {empresa.situacao_cadastral}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {empresa.porte}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {empresa.municipio}/{empresa.uf}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {formatDate(empresa.data_abertura)}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Visualizar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600">
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
           {filteredEmpresas.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground px-6">
               Nenhuma empresa encontrada
             </div>
           )}

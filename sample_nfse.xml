@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CompNfse xmlns="http://www.abrasf.org.br/nfse.xsd">
+  <Nfse versao="2.02">
+    <InfNfse Id="nfse240000093">
+      <Numero>240000093</Numero>
+      <CodigoVerificacao>ABC123DEF</CodigoVerificacao>
+      <DataEmissao>2024-08-29T11:47:15</DataEmissao>
+      <IdentificacaoRps>
+        <Numero>001</Numero>
+        <Serie>A1</Serie>
+        <Tipo>1</Tipo>
+      </IdentificacaoRps>
+      <Servico>
+        <Valores>
+          <ValorServicos>1500.00</ValorServicos>
+          <ValorIss>75.00</ValorIss>
+          <ValorDeducoes>0.00</ValorDeducoes>
+          <ValorPis>0.00</ValorPis>
+          <ValorCofins>0.00</ValorCofins>
+          <ValorInss>0.00</ValorInss>
+          <ValorIr>0.00</ValorIr>
+          <ValorCsll>0.00</ValorCsll>
+          <OutrasRetencoes>0.00</OutrasRetencoes>
+          <BaseCalculo>1500.00</BaseCalculo>
+          <Aliquota>5.00</Aliquota>
+        </Valores>
+        <ItemListaServico>01.01</ItemListaServico>
+        <CodigoServico>01010</CodigoServico>
+        <CodigoMunicipio>2105302</CodigoMunicipio>
+        <Discriminacao>Serviços de consultoria em tecnologia da informação</Discriminacao>
+      </Servico>
+      <PrestadorServico>
+        <IdentificacaoPrestador>
+          <Cnpj>12345678000195</Cnpj>
+          <InscricaoMunicipal>123456</InscricaoMunicipal>
+        </IdentificacaoPrestador>
+        <RazaoSocial>EMPRESA PRESTADORA LTDA</RazaoSocial>
+      </PrestadorServico>
+      <TomadorServico>
+        <IdentificacaoTomador>
+          <CpfCnpj>
+            <Cnpj>98765432000187</Cnpj>
+          </CpfCnpj>
+          <InscricaoMunicipal>789012</InscricaoMunicipal>
+        </IdentificacaoTomador>
+        <RazaoSocial>EMPRESA TOMADORA LTDA</RazaoSocial>
+        <Endereco>
+          <Endereco>Rua das Flores, 123</Endereco>
+          <Numero>123</Numero>
+          <Complemento>Sala 101</Complemento>
+          <Bairro>Centro</Bairro>
+          <CodigoMunicipio>2105302</CodigoMunicipio>
+          <Uf>MA</Uf>
+          <Cep>65000000</Cep>
+        </Endereco>
+      </TomadorServico>
+    </InfNfse>
+  </Nfse>
+</CompNfse>

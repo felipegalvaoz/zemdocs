@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?><consultarNotaResponse><ListaNfse><ComplNfse>
+                  <Nfse>
+                    <InfNfse>
+                      <Numero>240000093</Numero>
+                      <CodigoVerificacao>d004ddc9aeaa4b5b6ed240bd89ef8670</CodigoVerificacao>
+                      <AssinaturaPrestadorTomador>4ORF-XQ2B</AssinaturaPrestadorTomador>
+                      <DataEmissao>2024-08-29 11:47:15</DataEmissao>
+                      <IdentificacaoRps>
+                        <Numero></Numero>
+                        <Serie>NFS-E</Serie>
+                        <Tipo></Tipo>
+                      </IdentificacaoRps>
+                      <DataEmissaoRps> </DataEmissaoRps>
+                      <NaturezaOperacao>3</NaturezaOperacao> 
+                      <OptanteSimplesNacional>1</OptanteSimplesNacional>
+                      <Competencia>29/08/2024 11:47:15.370923</Competencia>
+                      <OutrasInformacoes></OutrasInformacoes>
+                      <Servico>
+                        <Valores>
+                            <ValorServicos>454.98</ValorServicos>
+                            <ValorDeducoes>0.00</ValorDeducoes>
+                            <ValorPis>0.00</ValorPis>
+                            <ValorCofins>0.00</ValorCofins>
+                            <ValorInss>0.00</ValorInss>
+                            <ValorIr>0.00</ValorIr>
+                            <ValorCsll>0.00</ValorCsll>
+                            <IssRetido>2</IssRetido>
+                            <ValorIss>0.00</ValorIss>
+                            <OutrasRetencoes>0.00</OutrasRetencoes>
+                            <BaseCalculo>454.98</BaseCalculo>
+                            <Aliquota>0.0000</Aliquota>
+                            <ValorLiquidoNfse>454.98</ValorLiquidoNfse>
+                            <DescontoCondicionado>0.00</DescontoCondicionado>
+                            <DescontoIncondicionado>0.00</DescontoIncondicionado>
+                        </Valores>
+                        <ItemListaServico>1002</ItemListaServico>
+                        <CodigoCnae>7490-1/04</CodigoCnae>
+                        <Discriminacao>PRESTAÇÃO DE SERVIÇO</Discriminacao>
+                        <CodigoMunicipio>1204</CodigoMunicipio>
+                        <IBGE>2105302</IBGE>
+                        <TOM>803</TOM>
+                    </Servico>
+                    <PrestadorServico>
+                        <IdentificacaoPrestador>
+                            <Cnpj>32800353000162</Cnpj>
+                            <InscricaoMunicipal>975575</InscricaoMunicipal>
+                        </IdentificacaoPrestador>
+                        <RazaoSocial>J. J. VEICULOS LTDA</RazaoSocial>
+                        <NomeFantasia>J J VEICULOS</NomeFantasia>
+                        <Endereco>
+                            <Endereco>Bernardo Sayão</Endereco>
+                            <Numero>1246</Numero>
+                            <Complemento></Complemento>
+                            <Bairro>Nova Imperatriz</Bairro>
+                            <CodigoMunicipio>1204</CodigoMunicipio>
+                            <IBGE>2105302</IBGE>
+                            <TOM>803</TOM>
+                            <Cep>65907000</Cep>
+                        </Endereco>
+                    </PrestadorServico>
+                    <TomadorServico>
+                        <IdentificacaoTomador>
+                            <CpfCnpj><Cnpj>03546261000108</Cnpj></CpfCnpj>
+                        </IdentificacaoTomador>
+                        <RazaoSocial>CARDIF DO BRASIL VIDA E PREVIDENCIA S/A</RazaoSocial>
+                        <Endereco>
+                            <Endereco>AVENIDA PRESIDENTE JUSCELINO KUBITSCHEK 1909</Endereco>
+                            <Numero>1909</Numero>
+                            <Complemento>TORRE SUL           ANDAR 7 E 8               CONJ  71B E 81</Complemento>
+                            <Bairro>VILA NOVA CONCEICAO</Bairro>
+                            <CodigoMunicipio>1204</CodigoMunicipio>
+                            <IBGE>2105302</IBGE>
+                            <TOM>803</TOM>
+                            <Cep>4543907</Cep>
+                        </Endereco>
+                    </TomadorServico>
+                  </InfNfse>
+                </Nfse>
+                <NfseCancelamento>
+                  <Confirmacao>
+                    <Pedido>
+                      <InfPedidoCancelamento>
+                        <IdentificacaoNfse></IdentificacaoNfse>
+                        <DataCancelamento></DataCancelamento>
+                        </InfPedidoCancelamento>
+                    </Pedido>
+                    <InfConfirmacaoCancelamento>
+                      <Sucesso>false</Sucesso>
+                    </InfConfirmacaoCancelamento>
+                 </Confirmacao>
+               </NfseCancelamento>
+               <NfseSubstituicao>
+                 <SubstituicaoNfse></SubstituicaoNfse>
+               </NfseSubstituicao>
+               </ComplNfse>
+               </ListaNfse>
+               </consultarNotaResponse>

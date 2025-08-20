@@ -13,9 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
-import Link from "next/link"
+
 import { EmpresasAdvancedTable } from "@/components/empresas"
 import { EmpresasStats } from "@/components/empresas/empresas-stats"
 
@@ -44,19 +42,11 @@ export default function EmpresasPage() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Empresas</h2>
-              <p className="text-muted-foreground">
-                Gerencie as empresas cadastradas no sistema
-              </p>
-            </div>
-            <Link href="/empresas/nova">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Empresa
-              </Button>
-            </Link>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Empresas</h2>
+            <p className="text-muted-foreground">
+              Gerencie as empresas cadastradas no sistema
+            </p>
           </div>
           <div className="grid auto-rows-min gap-4 md:grid-cols-4">
             <EmpresasStats />

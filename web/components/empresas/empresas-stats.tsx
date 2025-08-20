@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Building2, Users, TrendingUp, MapPin } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -56,15 +56,14 @@ export function EmpresasStats() {
       <>
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Carregando...</CardTitle>
-              <div className="h-4 w-4 bg-muted rounded animate-pulse" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">---</div>
-              <p className="text-xs text-muted-foreground">
-                Buscando dados...
-              </p>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-bold">---</div>
+                  <p className="text-xs text-muted-foreground">Carregando...</p>
+                </div>
+                <div className="h-4 w-4 bg-muted rounded animate-pulse" />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -78,54 +77,50 @@ export function EmpresasStats() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-          <CardTitle className="text-xs font-medium">Total de Empresas</CardTitle>
-          <Building2 className="h-3 w-3 text-muted-foreground" />
-        </CardHeader>
-        <CardContent className="pb-2">
-          <div className="text-xl font-bold">{stats.total.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">
-            Empresas cadastradas
-          </p>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-lg font-bold">{stats.total.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </div>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-          <CardTitle className="text-xs font-medium">Empresas Ativas</CardTitle>
-          <Users className="h-3 w-3 text-muted-foreground" />
-        </CardHeader>
-        <CardContent className="pb-2">
-          <div className="text-xl font-bold">{stats.ativas.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">
-            {percentualAtivas}% do total
-          </p>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-lg font-bold">{stats.ativas.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Ativas ({percentualAtivas}%)</p>
+            </div>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Novas Este Ano</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.novasEsteAno}</div>
-          <p className="text-xs text-muted-foreground">
-            Empresas abertas em 2024
-          </p>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-lg font-bold">{stats.novasEsteAno}</div>
+              <p className="text-xs text-muted-foreground">Novas 2024</p>
+            </div>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Principal UF</CardTitle>
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{principalUF?.[0] || "---"}</div>
-          <p className="text-xs text-muted-foreground">
-            {principalUF?.[1] || 0} empresas
-          </p>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-lg font-bold">{principalUF?.[0] || "---"}</div>
+              <p className="text-xs text-muted-foreground">{principalUF?.[1] || 0} empresas</p>
+            </div>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          </div>
         </CardContent>
       </Card>
     </>

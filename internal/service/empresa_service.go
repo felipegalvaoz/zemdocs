@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"zemdocs/internal/database/model"
 	"zemdocs/internal/database/repository"
 	"zemdocs/internal/logger"
@@ -93,18 +94,20 @@ func (s *EmpresaService) CriarEmpresa(ctx context.Context, req *model.EmpresaCre
 		return nil, fmt.Errorf("CNPJ inválido")
 	}
 
-	// Formatar CNPJ
-	cnpjFormatado := s.cnpjaService.FormatarCNPJ(req.CNPJ)
+	// Limpar CNPJ (salvar só números)
+	cnpjLimpo := strings.ReplaceAll(req.CNPJ, ".", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "/", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "-", "")
 
 	// Verificar se empresa já existe
-	empresaExistente, err := s.empresaRepo.GetByCNPJ(ctx, cnpjFormatado)
+	empresaExistente, err := s.empresaRepo.GetByCNPJ(ctx, cnpjLimpo)
 	if err == nil && empresaExistente != nil {
-		return nil, fmt.Errorf("empresa com CNPJ %s já existe", cnpjFormatado)
+		return nil, fmt.Errorf("empresa com CNPJ %s já existe", s.cnpjaService.FormatarCNPJ(cnpjLimpo))
 	}
 
 	// Criar empresa
 	empresa := &model.Empresa{
-		CNPJ:         cnpjFormatado,
+		CNPJ:         cnpjLimpo, // Salvar limpo
 		RazaoSocial:  req.RazaoSocial,
 		NomeFantasia: req.NomeFantasia,
 		Email:        req.Email,

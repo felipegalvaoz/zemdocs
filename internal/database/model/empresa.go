@@ -122,26 +122,153 @@ type AtividadeResponse struct {
 
 // CNPJAResponse representa a resposta da API CNPJA
 type CNPJAResponse struct {
-	CNPJ                  string                `json:"cnpj"`
-	RazaoSocial           string                `json:"razao_social"`
-	NomeFantasia          string                `json:"nome_fantasia"`
-	DataAbertura          string                `json:"data_abertura"`
-	Porte                 CNPJAPorte            `json:"porte"`
-	NaturezaJuridica      CNPJANaturezaJuridica `json:"natureza_juridica"`
-	SituacaoCadastral     CNPJASituacao         `json:"situacao_cadastral"`
-	AtividadePrincipal    CNPJAAtividade        `json:"atividade_principal"`
-	AtividadesSecundarias []CNPJAAtividade      `json:"atividades_secundarias"`
-	Endereco              CNPJAEndereco         `json:"endereco"`
-	Telefones             []CNPJATelefone       `json:"telefones"`
-	Email                 string                `json:"email"`
-	CapitalSocial         float64               `json:"capital_social"`
-	SimplesNacional       CNPJASimples          `json:"simples_nacional"`
-	Socios                []CNPJASocio          `json:"socios"`
+	Updated        string              `json:"updated"`
+	TaxID          string              `json:"taxId"`
+	Alias          string              `json:"alias"`
+	Founded        string              `json:"founded"`
+	Head           bool                `json:"head"`
+	Company        CNPJACompany        `json:"company"`
+	StatusDate     string              `json:"statusDate"`
+	Status         CNPJAStatus         `json:"status"`
+	Address        CNPJAAddress        `json:"address"`
+	MainActivity   CNPJAActivity       `json:"mainActivity"`
+	Phones         []CNPJAPhone        `json:"phones"`
+	Emails         []CNPJAEmail        `json:"emails"`
+	SideActivities []CNPJAActivity     `json:"sideActivities"`
+	Registrations  []CNPJARegistration `json:"registrations"`
+	Suframa        []CNPJASuframa      `json:"suframa"`
+}
+
+// Tipos para a API CNPJA
+type CNPJACompany struct {
+	ID      int           `json:"id"`
+	Name    string        `json:"name"`
+	Equity  float64       `json:"equity"`
+	Size    CNPJASize     `json:"size"`
+	Nature  CNPJANature   `json:"nature"`
+	Simples CNPJASimples  `json:"simples"`
+	Simei   CNPJASimei    `json:"simei"`
+	Members []CNPJAMember `json:"members"`
+}
+
+type CNPJAStatus struct {
+	ID   int    `json:"id"`
+	Text string `json:"text"`
+}
+
+type CNPJASize struct {
+	ID      int    `json:"id"`
+	Acronym string `json:"acronym"`
+	Text    string `json:"text"`
+}
+
+type CNPJASimei struct {
+	Optant bool   `json:"optant"`
+	Since  string `json:"since"`
+}
+
+type CNPJAMember struct {
+	Since  string      `json:"since"`
+	Person CNPJAPerson `json:"person"`
+	Role   CNPJARole   `json:"role"`
+}
+
+type CNPJAPerson struct {
+	ID    string `json:"id"`
+	Type  string `json:"type"`
+	Name  string `json:"name"`
+	TaxID string `json:"taxId"`
+	Age   string `json:"age"`
+}
+
+type CNPJARole struct {
+	ID   int    `json:"id"`
+	Text string `json:"text"`
+}
+
+type CNPJAAddress struct {
+	Municipality int          `json:"municipality"`
+	Street       string       `json:"street"`
+	Number       string       `json:"number"`
+	District     string       `json:"district"`
+	City         string       `json:"city"`
+	State        string       `json:"state"`
+	Details      string       `json:"details"`
+	Zip          string       `json:"zip"`
+	Country      CNPJACountry `json:"country"`
+}
+
+type CNPJACountry struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type CNPJAActivity struct {
+	ID   int    `json:"id"`
+	Text string `json:"text"`
+}
+
+type CNPJAPhone struct {
+	Type   string `json:"type"`
+	Area   string `json:"area"`
+	Number string `json:"number"`
+}
+
+type CNPJAEmail struct {
+	Ownership string `json:"ownership"`
+	Address   string `json:"address"`
+	Domain    string `json:"domain"`
+}
+
+type CNPJARegistration struct {
+	Number     string         `json:"number"`
+	State      string         `json:"state"`
+	Enabled    bool           `json:"enabled"`
+	StatusDate string         `json:"statusDate"`
+	Status     CNPJARegStatus `json:"status"`
+	Type       CNPJARegType   `json:"type"`
+}
+
+type CNPJARegStatus struct {
+	ID   int    `json:"id"`
+	Text string `json:"text"`
+}
+
+type CNPJARegType struct {
+	ID   int    `json:"id"`
+	Text string `json:"text"`
+}
+
+type CNPJASuframa struct {
+	Number       string             `json:"number"`
+	Since        string             `json:"since"`
+	Approved     bool               `json:"approved"`
+	ApprovalDate string             `json:"approvalDate"`
+	Status       CNPJASuframaStatus `json:"status"`
+	Incentives   []CNPJAIncentive   `json:"incentives"`
+}
+
+type CNPJASuframaStatus struct {
+	ID   int    `json:"id"`
+	Text string `json:"text"`
+}
+
+type CNPJAIncentive struct {
+	Tribute string `json:"tribute"`
+	Benefit string `json:"benefit"`
+	Purpose string `json:"purpose"`
+	Basis   string `json:"basis"`
+}
+
+type CNPJANature struct {
+	ID   int    `json:"id"`
+	Text string `json:"text"`
 }
 
 type CNPJAPorte struct {
-	Codigo    string `json:"codigo"`
-	Descricao string `json:"descricao"`
+	ID      int    `json:"id"`
+	Text    string `json:"text"`
+	Acronym string `json:"acronym"`
 }
 
 type CNPJANaturezaJuridica struct {
@@ -157,29 +284,28 @@ type CNPJASituacao struct {
 }
 
 type CNPJAAtividade struct {
-	Codigo    string `json:"codigo"`
-	Descricao string `json:"descricao"`
+	ID   int    `json:"id"`
+	Text string `json:"text"`
 }
 
 type CNPJAEndereco struct {
-	Logradouro  string `json:"logradouro"`
-	Numero      string `json:"numero"`
-	Complemento string `json:"complemento"`
-	Bairro      string `json:"bairro"`
-	CEP         string `json:"cep"`
-	Municipio   string `json:"municipio"`
-	UF          string `json:"uf"`
+	Street   string `json:"street"`
+	Number   string `json:"number"`
+	Details  string `json:"details"`
+	District string `json:"district"`
+	Zip      string `json:"zip"`
+	City     string `json:"city"`
+	State    string `json:"state"`
 }
 
 type CNPJATelefone struct {
-	DDD    string `json:"ddd"`
-	Numero string `json:"numero"`
+	Area   string `json:"area"`
+	Number string `json:"number"`
 }
 
 type CNPJASimples struct {
-	Optante   bool   `json:"optante"`
-	DataOpcao string `json:"data_opcao"`
-	MEI       bool   `json:"mei"`
+	Optant bool   `json:"optant"`
+	Since  string `json:"since"`
 }
 
 type CNPJASocio struct {

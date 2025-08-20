@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useMemo, useRef, useState } from "react"
+import { useId, useMemo, useRef, useState, useEffect } from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -32,12 +32,20 @@ import {
   Eye,
   Edit,
   Search,
+  CalendarIcon,
 } from "lucide-react"
+import Link from "next/link"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -92,23 +100,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { DateRange } from "react-day-picker"
+import { useEmpresas, type Empresa } from "@/hooks/use-empresas"
 
-// Interface para Empresa
-interface Empresa {
-  id: number
-  cnpj: string
-  razao_social: string
-  nome_fantasia: string
-  situacao_cadastral: string
-  porte: string
-  municipio: string
-  uf: string
-  data_abertura: string
-  email?: string
-  telefone?: string
-  atividade_principal?: string
-  capital_social?: number
-}
+// Usando interface do hook
 
 // Função de filtro personalizada para múltiplas colunas
 const multiColumnFilterFn: FilterFn<Empresa> = (row, _columnId, value) => {
@@ -161,19 +157,40 @@ const getSituacaoVariant = (situacao: string) => {
   }
 }
 
-// Função para formatar data
+// Função para formatar data (evita problemas de hidratação)
 const formatDate = (dateString: string) => {
   if (!dateString) return "-"
-  return new Date(dateString).toLocaleDateString('pt-BR')
+
+  try {
+    // Parse da string de data diretamente (formato YYYY-MM-DD)
+    const parts = dateString.split('-')
+    if (parts.length !== 3) return "-"
+
+    const year = parts[0]
+    const month = parts[1]
+    const day = parts[2]
+
+    // Valida se são números válidos
+    if (!year || !month || !day) return "-"
+
+    return `${day}/${month}/${year}`
+  } catch (error) {
+    return "-"
+  }
 }
 
-// Função para formatar moeda
+// Função para formatar moeda (evita problemas de hidratação)
 const formatCurrency = (value?: number) => {
-  if (!value) return "-"
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value)
+  if (!value || value === 0) return "-"
+
+  // Formata manualmente para evitar problemas de locale
+  const formatted = value.toFixed(2).replace('.', ',')
+  const parts = formatted.split(',')
+
+  // Adiciona pontos para milhares
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+  return `R$ ${parts.join(',')}`
 }
 
 // Dados mock para demonstração
@@ -202,7 +219,7 @@ const mockEmpresas: Empresa[] = [
     porte: "PEQUENO PORTE",
     municipio: "SÃO LUÍS",
     uf: "MA",
-    data_abertura: "2020-08-22",
+    data_abertura: "2024-08-22",
     email: "contato@techsolutions.com.br",
     telefone: "(98) 3234-5678",
     atividade_principal: "Desenvolvimento de software",
@@ -217,7 +234,7 @@ const mockEmpresas: Empresa[] = [
     porte: "MICRO EMPRESA",
     municipio: "IMPERATRIZ",
     uf: "MA",
-    data_abertura: "2018-11-05",
+    data_abertura: "2023-11-05",
     email: "contato@consultoriaxyz.com.br",
     telefone: "(99) 3456-7890",
     atividade_principal: "Consultoria empresarial",
@@ -387,6 +404,11 @@ export default function EmpresasAdvancedTable() {
   })
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Estados para novos filtros
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [cnpjEmitente, setCnpjEmitente] = useState("")
+  const [cnpjDestinatario, setCnpjDestinatario] = useState("")
+
   const [sorting, setSorting] = useState<SortingState>([
     {
       id: "razao_social",
@@ -394,21 +416,111 @@ export default function EmpresasAdvancedTable() {
     },
   ])
 
-  const [data, setData] = useState<Empresa[]>(mockEmpresas)
-  const [loading] = useState(false)
+  // Hook para gerenciar empresas
+  const { empresas, loading, listarEmpresas, excluirEmpresa } = useEmpresas()
+  const [data, setData] = useState<Empresa[]>(mockEmpresas) // Usar mock por enquanto
+
+  // Carregar dados das empresas
+  useEffect(() => {
+    const loadEmpresas = async () => {
+      try {
+        await listarEmpresas({ limit: 100, offset: 0 })
+      } catch (error) {
+        console.error('Erro ao carregar empresas:', error)
+        // Manter dados mock em caso de erro
+      }
+    }
+
+    loadEmpresas()
+  }, [listarEmpresas])
+
+  // Atualizar dados quando empresas mudarem
+  useEffect(() => {
+    if (empresas.length > 0) {
+      setData(empresas)
+    }
+  }, [empresas])
+
+  // Aplicar filtros personalizados aos dados
+  const filteredData = useMemo(() => {
+    let filtered = data
+
+    // Filtro por intervalo de datas
+    if (dateRange?.from || dateRange?.to) {
+      filtered = filtered.filter((empresa) => {
+        if (!empresa.data_abertura) return false
+
+        const dataAbertura = new Date(empresa.data_abertura)
+
+        // Comparação com data de início (00:00:00)
+        if (dateRange.from) {
+          const dataInicio = new Date(dateRange.from)
+          dataInicio.setHours(0, 0, 0, 0)
+          if (dataAbertura < dataInicio) return false
+        }
+
+        // Comparação com data de fim (23:59:59)
+        if (dateRange.to) {
+          const dataFim = new Date(dateRange.to)
+          dataFim.setHours(23, 59, 59, 999)
+          if (dataAbertura > dataFim) return false
+        }
+
+        return true
+      })
+    }
+
+    // Filtro por CNPJ Emitente (busca no CNPJ da empresa)
+    if (cnpjEmitente) {
+      const cnpjLimpo = cnpjEmitente.replace(/\D/g, '')
+      if (cnpjLimpo) {
+        filtered = filtered.filter((empresa) => {
+          const empresaCnpj = empresa.cnpj.replace(/\D/g, '')
+          return empresaCnpj.includes(cnpjLimpo)
+        })
+      }
+    }
+
+    // Filtro por CNPJ Destinatário (busca no CNPJ da empresa)
+    if (cnpjDestinatario) {
+      const cnpjLimpo = cnpjDestinatario.replace(/\D/g, '')
+      if (cnpjLimpo) {
+        filtered = filtered.filter((empresa) => {
+          const empresaCnpj = empresa.cnpj.replace(/\D/g, '')
+          return empresaCnpj.includes(cnpjLimpo)
+        })
+      }
+    }
+
+    return filtered
+  }, [data, dateRange, cnpjEmitente, cnpjDestinatario])
 
   // Função para deletar empresas selecionadas
-  const handleDeleteRows = () => {
+  const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows
-    const updatedData = data.filter(
-      (item) => !selectedRows.some((row) => row.original.id === item.id)
-    )
-    setData(updatedData)
-    table.resetRowSelection()
+
+    try {
+      // Excluir cada empresa selecionada
+      for (const row of selectedRows) {
+        await excluirEmpresa(row.original.id)
+      }
+
+      // Atualizar dados locais
+      const updatedData = data.filter(
+        (item) => !selectedRows.some((row) => row.original.id === item.id)
+      )
+      setData(updatedData)
+      table.resetRowSelection()
+
+      // Recarregar lista
+      await listarEmpresas({ limit: 100, offset: 0 })
+    } catch (error) {
+      console.error('Erro ao excluir empresas:', error)
+    }
   }
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -428,7 +540,7 @@ export default function EmpresasAdvancedTable() {
     },
   })
 
-  // Valores únicos para filtros com contadores
+  // Valores únicos para filtros com contadores (baseado nos dados filtrados para mostrar contagens atuais)
   const uniqueSituacoes = useMemo(() => {
     const situacoes = Array.from(new Set(data.map(item => item.situacao_cadastral)))
     return situacoes.sort()
@@ -440,37 +552,39 @@ export default function EmpresasAdvancedTable() {
   }, [data])
 
   const uniqueUFs = useMemo(() => {
-    const ufs = Array.from(new Set(data.map(item => item.uf)))
+    const ufs = Array.from(new Set(data.map(item => item.endereco?.uf).filter(Boolean)))
     return ufs.sort()
   }, [data])
 
-  // Contadores para cada filtro
+  // Contadores para cada filtro (baseado nos dados filtrados para mostrar contagens atuais)
   const situacaoCounts = useMemo(() => {
     const counts = new Map<string, number>()
-    data.forEach(item => {
+    filteredData.forEach(item => {
       const situacao = item.situacao_cadastral
       counts.set(situacao, (counts.get(situacao) || 0) + 1)
     })
     return counts
-  }, [data])
+  }, [filteredData])
 
   const porteCounts = useMemo(() => {
     const counts = new Map<string, number>()
-    data.forEach(item => {
+    filteredData.forEach(item => {
       const porte = item.porte
       counts.set(porte, (counts.get(porte) || 0) + 1)
     })
     return counts
-  }, [data])
+  }, [filteredData])
 
   const ufCounts = useMemo(() => {
     const counts = new Map<string, number>()
-    data.forEach(item => {
-      const uf = item.uf
-      counts.set(uf, (counts.get(uf) || 0) + 1)
+    filteredData.forEach(item => {
+      const uf = item.endereco?.uf
+      if (uf) {
+        counts.set(uf, (counts.get(uf) || 0) + 1)
+      }
     })
     return counts
-  }, [data])
+  }, [filteredData])
 
   // Estados para filtros selecionados
   const selectedSituacoes = (table.getColumn("situacao_cadastral")?.getFilterValue() as string[]) || []
@@ -535,66 +649,61 @@ export default function EmpresasAdvancedTable() {
   // Função para limpar filtros
   const clearFilters = () => {
     table.resetColumnFilters()
+    setDateRange(undefined)
+    setCnpjEmitente("")
+    setCnpjDestinatario("")
     if (inputRef.current) {
       inputRef.current.value = ""
     }
   }
 
-  const hasFilters = table.getState().columnFilters.length > 0
+  const hasFilters = table.getState().columnFilters.length > 0 ||
+                     dateRange !== undefined ||
+                     cnpjEmitente !== "" ||
+                     cnpjDestinatario !== ""
   const selectedRowsCount = table.getSelectedRowModel().rows.length
 
   return (
     <Card className="w-full min-w-0">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="h-5 w-5" />
-          Empresas
-        </CardTitle>
-        <CardDescription>
-          Gerenciar empresas cadastradas no sistema com funcionalidades avançadas
-        </CardDescription>
-      </CardHeader>
       <CardContent className="p-0 min-w-0">
         {/* Barra de ferramentas */}
-        <div className="flex flex-col gap-4 p-6 border-b min-w-0">
-          {/* Linha 1: Busca e ações */}
-          <div className="flex items-center justify-between gap-4 min-w-0">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {/* Campo de busca melhorado */}
-              <div className="relative flex-1 max-w-sm">
-                <Input
-                  id={`${id}-input`}
-                  ref={inputRef}
-                  className={cn(
-                    "peer w-full ps-9",
-                    Boolean(table.getColumn("cnpj")?.getFilterValue()) && "pe-9"
-                  )}
-                  value={(table.getColumn("cnpj")?.getFilterValue() ?? "") as string}
-                  onChange={(e) => {
-                    table.getColumn("cnpj")?.setFilterValue(e.target.value)
-                  }}
-                  placeholder="Buscar por CNPJ, razão social ou nome fantasia..."
-                  type="text"
-                  aria-label="Buscar empresas"
-                />
-                <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                  <Search size={16} aria-hidden="true" />
-                </div>
-                {Boolean(table.getColumn("cnpj")?.getFilterValue()) && (
-                  <button
-                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Limpar busca"
-                    onClick={() => {
-                      table.getColumn("cnpj")?.setFilterValue("")
-                      if (inputRef.current) {
-                        inputRef.current.focus()
-                      }
-                    }}
-                  >
-                    <CircleXIcon size={16} aria-hidden="true" />
-                  </button>
+        <div className="border-b min-w-0">
+          {/* Linha principal: Busca e Ações */}
+          <div className="flex items-center justify-between gap-4 p-4 min-w-0">
+            {/* Campo de busca */}
+            <div className="relative flex-1 min-w-64 max-w-sm">
+              <Input
+                id={`${id}-input`}
+                ref={inputRef}
+                className={cn(
+                  "peer w-full ps-9",
+                  Boolean(table.getColumn("cnpj")?.getFilterValue()) && "pe-9"
                 )}
+                value={(table.getColumn("cnpj")?.getFilterValue() ?? "") as string}
+                onChange={(e) => {
+                  table.getColumn("cnpj")?.setFilterValue(e.target.value)
+                }}
+                placeholder="Buscar por CNPJ, razão social..."
+                type="text"
+                aria-label="Buscar empresas"
+              />
+              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                <Search size={16} aria-hidden="true" />
               </div>
+              {Boolean(table.getColumn("cnpj")?.getFilterValue()) && (
+                <button
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Limpar busca"
+                  onClick={() => {
+                    table.getColumn("cnpj")?.setFilterValue("")
+                    if (inputRef.current) {
+                      inputRef.current.focus()
+                    }
+                  }}
+                >
+                  <CircleXIcon size={16} aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             {/* Botões de ação */}
@@ -638,16 +747,91 @@ export default function EmpresasAdvancedTable() {
                 </AlertDialog>
               )}
 
-              <Button variant="outline" size="sm">
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Nova Empresa
-              </Button>
+              <Link href="/empresas/nova">
+                <Button variant="outline" size="sm">
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Nova Empresa
+                </Button>
+              </Link>
             </div>
           </div>
 
-          {/* Linha 2: Filtros */}
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            {/* Filtro por Situação */}
+          {/* Acordeon para Filtros Avançados */}
+          <Accordion type="single" collapsible className="border-t">
+            <AccordionItem value="filters" className="border-b-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline text-sm">
+                <div className="flex items-center gap-2">
+                  <FilterIcon className="h-4 w-4" />
+                  <span>Filtros Avançados</span>
+                  {(selectedSituacoes.length > 0 || selectedPortes.length > 0 || selectedUFs.length > 0 || dateRange || cnpjEmitente || cnpjDestinatario) && (
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedSituacoes.length + selectedPortes.length + selectedUFs.length +
+                       (dateRange ? 1 : 0) + (cnpjEmitente ? 1 : 0) + (cnpjDestinatario ? 1 : 0)} ativo{(selectedSituacoes.length + selectedPortes.length + selectedUFs.length +
+                       (dateRange ? 1 : 0) + (cnpjEmitente ? 1 : 0) + (cnpjDestinatario ? 1 : 0)) > 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  {filteredData.length !== data.length && (
+                    <Badge variant="outline" className="text-xs">
+                      {filteredData.length} de {data.length}
+                    </Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 pt-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* Filtro por Data */}
+                  <DateRangePicker
+                    date={dateRange}
+                    onDateChange={setDateRange}
+                    placeholder="Período"
+                  />
+
+                  {/* Filtro por CNPJ Emitente */}
+                  <div className="relative">
+                    <Input
+                      placeholder="CNPJ Emitente"
+                      value={cnpjEmitente}
+                      onChange={(e) => {
+                        // Aplicar máscara de CNPJ
+                        let value = e.target.value.replace(/\D/g, '')
+                        if (value.length <= 14) {
+                          value = value.replace(/^(\d{2})(\d)/, '$1.$2')
+                          value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+                          value = value.replace(/\.(\d{3})(\d)/, '.$1/$2')
+                          value = value.replace(/(\d{4})(\d)/, '$1-$2')
+                          setCnpjEmitente(value)
+                        }
+                      }}
+                      className="w-44"
+                      maxLength={18}
+                    />
+                  </div>
+
+                  {/* Filtro por CNPJ Destinatário */}
+                  <div className="relative">
+                    <Input
+                      placeholder="CNPJ Destinatário"
+                      value={cnpjDestinatario}
+                      onChange={(e) => {
+                        // Aplicar máscara de CNPJ
+                        let value = e.target.value.replace(/\D/g, '')
+                        if (value.length <= 14) {
+                          value = value.replace(/^(\d{2})(\d)/, '$1.$2')
+                          value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+                          value = value.replace(/\.(\d{3})(\d)/, '.$1/$2')
+                          value = value.replace(/(\d{4})(\d)/, '$1-$2')
+                          setCnpjDestinatario(value)
+                        }
+                      }}
+                      className="w-44"
+                      maxLength={18}
+                    />
+                  </div>
+
+                  {/* Separador */}
+                  <div className="h-6 w-px bg-border" />
+
+                  {/* Filtro por Situação */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
@@ -810,19 +994,22 @@ export default function EmpresasAdvancedTable() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Limpar filtros */}
-            {hasFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="gap-2"
-              >
-                <CircleXIcon className="h-4 w-4" />
-                Limpar filtros
-              </Button>
-            )}
-          </div>
+                  {/* Limpar filtros */}
+                  {hasFilters && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="gap-2"
+                    >
+                      <CircleXIcon className="h-4 w-4" />
+                      Limpar filtros
+                    </Button>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
 
         {/* Tabela */}
@@ -1077,19 +1264,17 @@ function RowActions({ row: _row }: { row: any }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <Eye className="mr-2 h-4 w-4" />
-            <span>Visualizar</span>
-            <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
+          <DropdownMenuItem asChild>
+            <Link href={`/empresas/${_row.original.id}`}>
+              <Eye className="mr-2 h-4 w-4" />
+              <span>Visualizar</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Edit className="mr-2 h-4 w-4" />
-            <span>Editar</span>
-            <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <span>Duplicar</span>
-            <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+          <DropdownMenuItem asChild>
+            <Link href={`/empresas/${_row.original.id}/editar`}>
+              <Edit className="mr-2 h-4 w-4" />
+              <span>Editar</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

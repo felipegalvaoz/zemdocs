@@ -41,7 +41,7 @@ func (s *CNPJAService) ConsultarCNPJ(ctx context.Context, cnpj string) (*model.C
 
 	// Fazer requisição para a API
 	url := fmt.Sprintf("%s/%s", s.baseURL, cnpjLimpo)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar requisição: %w", err)
@@ -76,7 +76,7 @@ func (s *CNPJAService) ConsultarCNPJ(ctx context.Context, cnpj string) (*model.C
 		return nil, fmt.Errorf("erro ao decodificar resposta: %w", err)
 	}
 
-	logger.Info(fmt.Sprintf("CNPJ consultado com sucesso: %s - %s", cnpjLimpo, cnpjaResp.RazaoSocial))
+	logger.Info(fmt.Sprintf("CNPJ consultado com sucesso: %s - %s", cnpjLimpo, cnpjaResp.Company.Name))
 
 	return &cnpjaResp, nil
 }
@@ -84,57 +84,61 @@ func (s *CNPJAService) ConsultarCNPJ(ctx context.Context, cnpj string) (*model.C
 // ConvertToEmpresa converte dados da API CNPJA para o modelo Empresa
 func (s *CNPJAService) ConvertToEmpresa(cnpjaResp *model.CNPJAResponse) *model.Empresa {
 	empresa := &model.Empresa{
-		CNPJ:              cnpjaResp.CNPJ,
-		RazaoSocial:       cnpjaResp.RazaoSocial,
-		NomeFantasia:      cnpjaResp.NomeFantasia,
-		Porte:             cnpjaResp.Porte.Descricao,
-		NaturezaJuridica:  cnpjaResp.NaturezaJuridica.Descricao,
-		CodigoNatureza:    cnpjaResp.NaturezaJuridica.Codigo,
-		SituacaoCadastral: cnpjaResp.SituacaoCadastral.Descricao,
-		Email:             cnpjaResp.Email,
-		CapitalSocial:     cnpjaResp.CapitalSocial,
-		SimplesNacional:   cnpjaResp.SimplesNacional.Optante,
-		MEI:               cnpjaResp.SimplesNacional.MEI,
-		Ativa:             cnpjaResp.SituacaoCadastral.Codigo == "02", // 02 = Ativa
+		CNPJ:              cnpjaResp.TaxID,
+		RazaoSocial:       cnpjaResp.Company.Name,
+		NomeFantasia:      cnpjaResp.Alias,
+		Porte:             cnpjaResp.Company.Size.Text,
+		NaturezaJuridica:  cnpjaResp.Company.Nature.Text,
+		CodigoNatureza:    fmt.Sprintf("%d", cnpjaResp.Company.Nature.ID),
+		SituacaoCadastral: cnpjaResp.Status.Text,
+		CapitalSocial:     cnpjaResp.Company.Equity,
+		SimplesNacional:   cnpjaResp.Company.Simples.Optant,
+		MEI:               cnpjaResp.Company.Simei.Optant,
+		Ativa:             cnpjaResp.Status.ID == 2, // 2 = Ativa na API CNPJA
+	}
+
+	// Preencher email se disponível
+	if len(cnpjaResp.Emails) > 0 {
+		empresa.Email = cnpjaResp.Emails[0].Address
 	}
 
 	// Converter data de abertura
-	if cnpjaResp.DataAbertura != "" {
-		if dataAbertura, err := time.Parse("2006-01-02", cnpjaResp.DataAbertura); err == nil {
+	if cnpjaResp.Founded != "" {
+		if dataAbertura, err := time.Parse("2006-01-02", cnpjaResp.Founded); err == nil {
 			empresa.DataAbertura = dataAbertura
 		}
 	}
 
 	// Converter data da situação
-	if cnpjaResp.SituacaoCadastral.Data != "" {
-		if dataSituacao, err := time.Parse("2006-01-02", cnpjaResp.SituacaoCadastral.Data); err == nil {
+	if cnpjaResp.StatusDate != "" {
+		if dataSituacao, err := time.Parse("2006-01-02", cnpjaResp.StatusDate); err == nil {
 			empresa.DataSituacao = dataSituacao
 		}
 	}
 
 	// Atividade principal
-	if cnpjaResp.AtividadePrincipal.Codigo != "" {
-		empresa.AtividadePrincipal = cnpjaResp.AtividadePrincipal.Descricao
-		empresa.CodigoAtivPrincipal = cnpjaResp.AtividadePrincipal.Codigo
+	if cnpjaResp.MainActivity.ID != 0 {
+		empresa.AtividadePrincipal = cnpjaResp.MainActivity.Text
+		empresa.CodigoAtivPrincipal = fmt.Sprintf("%d", cnpjaResp.MainActivity.ID)
 	}
 
 	// Endereço
-	empresa.Logradouro = cnpjaResp.Endereco.Logradouro
-	empresa.Numero = cnpjaResp.Endereco.Numero
-	empresa.Complemento = cnpjaResp.Endereco.Complemento
-	empresa.Bairro = cnpjaResp.Endereco.Bairro
-	empresa.CEP = cnpjaResp.Endereco.CEP
-	empresa.Municipio = cnpjaResp.Endereco.Municipio
-	empresa.UF = cnpjaResp.Endereco.UF
+	empresa.Logradouro = cnpjaResp.Address.Street
+	empresa.Numero = cnpjaResp.Address.Number
+	empresa.Complemento = cnpjaResp.Address.Details
+	empresa.Bairro = cnpjaResp.Address.District
+	empresa.CEP = cnpjaResp.Address.Zip
+	empresa.Municipio = cnpjaResp.Address.City
+	empresa.UF = cnpjaResp.Address.State
 
 	// Telefone (pegar o primeiro se houver)
-	if len(cnpjaResp.Telefones) > 0 {
-		telefone := cnpjaResp.Telefones[0]
-		empresa.Telefone = fmt.Sprintf("(%s) %s", telefone.DDD, telefone.Numero)
+	if len(cnpjaResp.Phones) > 0 {
+		telefone := cnpjaResp.Phones[0]
+		empresa.Telefone = fmt.Sprintf("(%s) %s", telefone.Area, telefone.Number)
 	}
 
-	// Motivo da situação
-	empresa.MotivoSituacao = cnpjaResp.SituacaoCadastral.Motivo
+	// Motivo da situação (não disponível na nova API, deixar vazio)
+	empresa.MotivoSituacao = ""
 
 	return empresa
 }
@@ -143,11 +147,11 @@ func (s *CNPJAService) ConvertToEmpresa(cnpjaResp *model.CNPJAResponse) *model.E
 func (s *CNPJAService) ConvertAtividadesSecundarias(cnpjaResp *model.CNPJAResponse, empresaID int) []model.AtividadeSecundaria {
 	var atividades []model.AtividadeSecundaria
 
-	for _, atividade := range cnpjaResp.AtividadesSecundarias {
+	for _, atividade := range cnpjaResp.SideActivities {
 		atividades = append(atividades, model.AtividadeSecundaria{
 			EmpresaID: empresaID,
-			Codigo:    atividade.Codigo,
-			Descricao: atividade.Descricao,
+			Codigo:    fmt.Sprintf("%d", atividade.ID),
+			Descricao: atividade.Text,
 		})
 	}
 

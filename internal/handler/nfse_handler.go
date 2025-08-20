@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"zemdocs/internal/clientes/nfse"
 	"zemdocs/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -103,4 +104,73 @@ func (h *NFSeHandler) UltimoRPSEnviado(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"ultimo_rps": ultimoRps})
+}
+
+// TestarAPIExterna testa a conexão direta com a API da prefeitura
+func (h *NFSeHandler) TestarAPIExterna(c *gin.Context) {
+	competencia := c.DefaultQuery("competencia", "202408")
+
+	ctx := c.Request.Context()
+
+	// Usar o cliente diretamente para testar
+	client, exists := h.nfseService.GetClient("2105302") // Código IBGE de Imperatriz
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cliente não encontrado"})
+		return
+	}
+
+	// Fazer requisição de teste
+	req := nfse.ConsultarXMLRequest{
+		NrCompetencia: competencia,
+	}
+
+	nfseList, err := client.ConsultarXMLNFSe(ctx, req)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error":       "Erro na API externa",
+			"details":     err.Error(),
+			"competencia": competencia,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":           true,
+		"competencia":       competencia,
+		"total_encontradas": len(nfseList),
+		"primeira_nfse": func() interface{} {
+			if len(nfseList) > 0 {
+				return map[string]interface{}{
+					"numero":        nfseList[0].NumeroNfse,
+					"data_emissao":  nfseList[0].DataEmissao,
+					"valor_servico": nfseList[0].ValorServico,
+				}
+			}
+			return nil
+		}(),
+	})
+}
+
+// SincronizarManual executa sincronização manual das NFS-e
+func (h *NFSeHandler) SincronizarManual(c *gin.Context) {
+	competencia := c.DefaultQuery("competencia", "202408")
+
+	ctx := c.Request.Context()
+
+	// Executar sincronização
+	err := h.nfseService.SincronizarNFSe(ctx, competencia)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":       "Erro na sincronização",
+			"details":     err.Error(),
+			"competencia": competencia,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "Sincronização executada com sucesso",
+		"competencia": competencia,
+	})
 }

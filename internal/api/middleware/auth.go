@@ -10,8 +10,8 @@ import (
 // Auth middleware para validar o token de autorização
 func Auth() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
-		// Token esperado (mesmo do arquivo api.md)
-		expectedToken := "5a9bf05cc4321b58dd5966c1cffc67c11ed3fa66ca893d5925d70155e75e87f7"
+		// Token de produção
+		expectedToken := "69415f14b56ccabe8cc5ec8cf5d5a2d2dc2ac66f0bb9859484dd5f8ce7ae2d2a"
 
 		// Obter token do header Authorization
 		authHeader := c.GetHeader("Authorization")

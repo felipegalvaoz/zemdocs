@@ -7,6 +7,7 @@ import (
 	"zemdocs/internal/clientes/nfse"
 	"zemdocs/internal/database/model"
 	"zemdocs/internal/database/repository"
+	"zemdocs/internal/logger"
 	"zemdocs/internal/storage"
 )
 
@@ -212,6 +213,96 @@ func (s *NFSeService) GetXMLContent(ctx context.Context, numeroNfse, competencia
 		return "", fmt.Errorf("erro ao buscar XML: %w", err)
 	}
 	return string(xmlData), nil
+}
+
+// GetClient retorna um cliente NFS-e por código IBGE
+func (s *NFSeService) GetClient(codigoIBGE string) (nfse.Client, bool) {
+	return s.nfseRegistry.GetClient(codigoIBGE)
+}
+
+// SincronizarNFSe executa sincronização manual das NFS-e
+func (s *NFSeService) SincronizarNFSe(ctx context.Context, competencia string) error {
+	// Obter cliente de Imperatriz (código IBGE: 2105302)
+	client, exists := s.nfseRegistry.GetClient("2105302")
+	if !exists {
+		return fmt.Errorf("cliente de Imperatriz não encontrado")
+	}
+
+	// Buscar NFS-e da API externa
+	req := nfse.ConsultarXMLRequest{
+		NrCompetencia: competencia,
+	}
+
+	nfseList, err := client.ConsultarXMLNFSe(ctx, req)
+	if err != nil {
+		return fmt.Errorf("erro ao buscar NFS-e da API: %w", err)
+	}
+
+	totalProcessed := 0
+	totalErrors := 0
+
+	// Processar cada NFS-e
+	for _, nfseResp := range nfseList {
+		if err := s.processarNFSe(ctx, &nfseResp); err != nil {
+			logger.Error(err, fmt.Sprintf("Erro ao processar NFS-e %s", nfseResp.NumeroNfse))
+			totalErrors++
+		} else {
+			totalProcessed++
+		}
+	}
+
+	logger.Info(fmt.Sprintf("Sincronização concluída - competencia: %s, processadas: %d, erros: %d",
+		competencia, totalProcessed, totalErrors))
+
+	return nil
+}
+
+// processarNFSe processa uma NFS-e individual
+func (s *NFSeService) processarNFSe(ctx context.Context, nfseResp *nfse.Response) error {
+	// Verificar se já existe no banco
+	exists, err := s.nfseRepo.ExistsByNumeroNfse(ctx, nfseResp.NumeroNfse)
+	if err != nil {
+		return fmt.Errorf("erro ao verificar existência: %w", err)
+	}
+
+	if exists {
+		logger.Debug(fmt.Sprintf("NFS-e %s já existe, pulando", nfseResp.NumeroNfse))
+		return nil
+	}
+
+	// Criar modelo NFS-e com valores da resposta da API
+	nfse := &model.NFSe{
+		NumeroNfse:        nfseResp.NumeroNfse,
+		NumeroRps:         nfseResp.NumeroRps,
+		SerieRps:          nfseResp.SerieRps,
+		TipoRps:           1, // Padrão
+		DataEmissao:       nfseResp.DataEmissao,
+		Status:            nfseResp.Status,
+		CodigoVerificacao: nfseResp.CodigoVerificacao,
+		ValorServico:      nfseResp.ValorServico,
+		ValorIss:          nfseResp.ValorIss,
+		Competencia:       nfseResp.Competencia,
+		XMLContent:        "", // Não armazenar XML no banco
+	}
+
+	// Salvar no banco
+	if err := s.nfseRepo.Create(ctx, nfse); err != nil {
+		return fmt.Errorf("erro ao salvar no banco: %w", err)
+	}
+
+	// Salvar XML no MinIO
+	if nfseResp.XMLContent != "" {
+		objectName := s.minioClient.GenerateObjectName(nfseResp.NumeroNfse, nfseResp.Competencia)
+		if err := s.minioClient.UploadXML(ctx, objectName, []byte(nfseResp.XMLContent)); err != nil {
+			logger.Error(err, fmt.Sprintf("Erro ao salvar XML no MinIO para NFS-e %s", nfseResp.NumeroNfse))
+			// Não retornar erro, pois o registro já foi salvo no banco
+		}
+	}
+
+	logger.Debug(fmt.Sprintf("NFS-e %s processada com sucesso - valor: R$ %.2f",
+		nfse.NumeroNfse, nfse.ValorServico))
+
+	return nil
 }
 
 // toResponse converte model.NFSe para model.NFSeResponse

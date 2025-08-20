@@ -38,6 +38,8 @@ func SetupRouter(nfseHandler *handler.NFSeHandler) *gin.Engine {
 			nfse.GET("/consultar", nfseHandler.ConsultarNFSe)
 			nfse.GET("/xmlnfse", nfseHandler.ConsultarXMLNFSe)
 			nfse.GET("/ultimorpsenviado", nfseHandler.UltimoRPSEnviado)
+			nfse.GET("/testar-api", nfseHandler.TestarAPIExterna)
+			nfse.POST("/sincronizar", nfseHandler.SincronizarManual)
 		}
 	}
 

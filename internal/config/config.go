@@ -67,8 +67,11 @@ type SchedulerConfig struct {
 
 // NFSeConfig configurações dos clientes NFS-e
 type NFSeConfig struct {
+	Environment       string // homologacao ou producao
 	ImperatrizBaseURL string
 	ImperatrizToken   string
+	HomologacaoURL    string
+	HomologacaoToken  string
 }
 
 // Load carrega as configurações do arquivo .env e variáveis de ambiente

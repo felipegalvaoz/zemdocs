@@ -181,10 +181,11 @@ func (c *Client) makeRequest(ctx context.Context, method, url string, body inter
 		return nil, fmt.Errorf("erro ao criar requisição: %w", err)
 	}
 
-	// Adicionar headers
+	// Headers imitando curl para passar pelo Cloudflare
 	req.Header.Set("Authorization", c.token)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "curl/8.5.0")
 
 	// Log da requisição
 	logger.HTTP().Info().

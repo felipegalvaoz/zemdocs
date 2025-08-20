@@ -24,11 +24,35 @@ export interface Empresa {
 }
 
 export interface EmpresaCreateRequest {
+  // Dados básicos
   cnpj: string
+  inscricao_estadual: string
+  inscricao_municipal: string
   razao_social: string
   nome_fantasia: string
+  data_abertura: string
+  porte: string
+  natureza_juridica: string
+  atividade_principal: string
+  situacao_cadastral: string
+
+  // Endereço
+  logradouro: string
+  numero: string
+  complemento: string
+  cep: string
+  bairro: string
+  municipio: string
+  uf: string
+
+  // Contato
   email: string
   telefone: string
+
+  // Dados adicionais
+  capital_social: number
+  simples_nacional: boolean
+  mei: boolean
   ativa: boolean
 }
 
@@ -254,25 +278,27 @@ export function useEmpresas() {
 
         // Verificar se é erro de CNPJ duplicado
         if (errorMessage.includes('duplicate key value violates unique constraint') ||
-            errorMessage.includes('empresas_cnpj_key')) {
-          errorMessage = 'Uma empresa com este CNPJ já está cadastrada no sistema!'
+            errorMessage.includes('empresas_cnpj_key') ||
+            errorMessage.includes('já existe')) {
+          errorMessage = `⚠️ Empresa já cadastrada!\n\nUma empresa com este CNPJ já está registrada no sistema. Verifique a listagem de empresas ou use um CNPJ diferente.`
         }
 
         throw new Error(errorMessage)
       }
 
       const data = await response.json()
-      toast.success('Empresa criada com sucesso!')
       return data
     } catch (error) {
-      console.error('Erro ao criar empresa:', error)
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar empresa'
 
-      // Usar toast.warning para CNPJ duplicado
-      if (errorMessage.includes('já está cadastrada')) {
-        toast.warning(errorMessage)
-      } else {
-        toast.error(errorMessage)
+      // Para erros de duplicata, não mostrar toast aqui (será tratado pelo AlertDialog)
+      if (!errorMessage.includes('já cadastrada') &&
+          !errorMessage.includes('já está registrada') &&
+          !errorMessage.includes('já existe') &&
+          !errorMessage.includes('duplicate key')) {
+        toast.error(errorMessage, {
+          duration: 4000,
+        })
       }
 
       throw error
@@ -298,25 +324,27 @@ export function useEmpresas() {
 
         // Verificar se é erro de CNPJ duplicado
         if (errorMessage.includes('duplicate key value violates unique constraint') ||
-            errorMessage.includes('empresas_cnpj_key')) {
-          errorMessage = 'Esta empresa já está cadastrada no sistema!'
+            errorMessage.includes('empresas_cnpj_key') ||
+            errorMessage.includes('já existe')) {
+          errorMessage = `🔍 Empresa já encontrada!\n\nEsta empresa já está cadastrada no sistema. Você pode encontrá-la na listagem de empresas.`
         }
 
         throw new Error(errorMessage)
       }
 
       const data = await response.json()
-      toast.success('Empresa criada com sucesso!')
       return data
     } catch (error) {
-      console.error('Erro ao criar empresa por CNPJ:', error)
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar empresa'
 
-      // Usar toast.warning para CNPJ duplicado
-      if (errorMessage.includes('já está cadastrada')) {
-        toast.warning(errorMessage)
-      } else {
-        toast.error(errorMessage)
+      // Para erros de duplicata, não mostrar toast aqui (será tratado pelo AlertDialog)
+      if (!errorMessage.includes('já encontrada') &&
+          !errorMessage.includes('já está cadastrada') &&
+          !errorMessage.includes('já existe') &&
+          !errorMessage.includes('duplicate key')) {
+        toast.error(errorMessage, {
+          duration: 4000,
+        })
       }
 
       throw error

@@ -83,8 +83,13 @@ func (s *CNPJAService) ConsultarCNPJ(ctx context.Context, cnpj string) (*model.C
 
 // ConvertToEmpresa converte dados da API CNPJA para o modelo Empresa
 func (s *CNPJAService) ConvertToEmpresa(cnpjaResp *model.CNPJAResponse) *model.Empresa {
+	// Garantir que o CNPJ seja salvo limpo (só números)
+	cnpjLimpo := strings.ReplaceAll(cnpjaResp.TaxID, ".", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "/", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "-", "")
+
 	empresa := &model.Empresa{
-		CNPJ:              cnpjaResp.TaxID,
+		CNPJ:              cnpjLimpo, // Salvar limpo
 		RazaoSocial:       cnpjaResp.Company.Name,
 		NomeFantasia:      cnpjaResp.Alias,
 		Porte:             cnpjaResp.Company.Size.Text,

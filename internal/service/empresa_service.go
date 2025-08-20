@@ -46,10 +46,12 @@ func (s *EmpresaService) ConsultarPorID(ctx context.Context, id int) (*model.Emp
 
 // ConsultarPorCNPJ consulta uma empresa por CNPJ
 func (s *EmpresaService) ConsultarPorCNPJ(ctx context.Context, cnpj string) (*model.EmpresaResponse, error) {
-	// Formatar CNPJ
-	cnpjFormatado := s.cnpjaService.FormatarCNPJ(cnpj)
+	// Limpar CNPJ (buscar só números)
+	cnpjLimpo := strings.ReplaceAll(cnpj, ".", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "/", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "-", "")
 
-	empresa, err := s.empresaRepo.GetByCNPJ(ctx, cnpjFormatado)
+	empresa, err := s.empresaRepo.GetByCNPJ(ctx, cnpjLimpo)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar empresa: %w", err)
 	}
@@ -175,13 +177,15 @@ func (s *EmpresaService) CriarEmpresaPorCNPJ(ctx context.Context, cnpj string) (
 		return nil, fmt.Errorf("CNPJ inválido")
 	}
 
-	// Formatar CNPJ
-	cnpjFormatado := s.cnpjaService.FormatarCNPJ(cnpj)
+	// Limpar CNPJ (salvar só números)
+	cnpjLimpo := strings.ReplaceAll(cnpj, ".", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "/", "")
+	cnpjLimpo = strings.ReplaceAll(cnpjLimpo, "-", "")
 
 	// Verificar se empresa já existe
-	empresaExistente, err := s.empresaRepo.GetByCNPJ(ctx, cnpjFormatado)
+	empresaExistente, err := s.empresaRepo.GetByCNPJ(ctx, cnpjLimpo)
 	if err == nil && empresaExistente != nil {
-		return nil, fmt.Errorf("empresa com CNPJ %s já existe", cnpjFormatado)
+		return nil, fmt.Errorf("empresa com CNPJ %s já existe", s.cnpjaService.FormatarCNPJ(cnpjLimpo))
 	}
 
 	// Consultar dados na API CNPJA
@@ -207,7 +211,7 @@ func (s *EmpresaService) CriarEmpresaPorCNPJ(ctx context.Context, cnpj string) (
 func (s *EmpresaService) toEmpresaResponse(empresa *model.Empresa) *model.EmpresaResponse {
 	return &model.EmpresaResponse{
 		ID:                 empresa.ID,
-		CNPJ:               empresa.CNPJ,
+		CNPJ:               s.cnpjaService.FormatarCNPJ(empresa.CNPJ), // Formatar para apresentação
 		RazaoSocial:        empresa.RazaoSocial,
 		NomeFantasia:       empresa.NomeFantasia,
 		DataAbertura:       empresa.DataAbertura,

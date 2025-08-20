@@ -1,14 +1,14 @@
 package router
 
 import (
+	"zemdocs/internal/api/handlers"
 	"zemdocs/internal/api/middleware"
-	"zemdocs/internal/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
 // SetupRouter configura as rotas da API
-func SetupRouter(nfseHandler *handler.NFSeHandler) *gin.Engine {
+func SetupRouter(documentHandler *handlers.DocumentHandler, empresaHandler *handlers.EmpresaHandler) *gin.Engine {
 	// Configurar modo do Gin
 	gin.SetMode(gin.ReleaseMode)
 
@@ -32,14 +32,39 @@ func SetupRouter(nfseHandler *handler.NFSeHandler) *gin.Engine {
 	api := router.Group("/api/v1")
 	api.Use(middleware.Auth())
 	{
-		// Rotas de consulta NFS-e
+		// Rotas de documentos (antigo NFS-e)
+		documents := api.Group("/documents")
+		{
+			documents.GET("/", documentHandler.ListarDocumentos)
+			documents.GET("/:id", documentHandler.ConsultarDocumento)
+			documents.POST("/", documentHandler.CriarDocumento)
+			documents.PUT("/:id", documentHandler.AtualizarDocumento)
+			documents.DELETE("/:id", documentHandler.ExcluirDocumento)
+			documents.GET("/chart-data", documentHandler.DadosGrafico)
+			documents.GET("/recent", documentHandler.DocumentosRecentes)
+			documents.GET("/revenue", documentHandler.DadosReceita)
+			documents.GET("/growth", documentHandler.DadosCrescimento)
+			documents.GET("/iss-metrics", documentHandler.MetricasISS)
+		}
+
+		// Rotas de empresas
+		empresas := api.Group("/empresas")
+		{
+			empresas.GET("/", empresaHandler.ListarEmpresas)
+			empresas.GET("/:id", empresaHandler.ConsultarEmpresaPorID)
+			empresas.GET("/cnpj/:cnpj", empresaHandler.ConsultarEmpresaPorCNPJ)
+			empresas.POST("/", empresaHandler.CriarEmpresa)
+			empresas.PUT("/:id", empresaHandler.AtualizarEmpresa)
+			empresas.DELETE("/:id", empresaHandler.ExcluirEmpresa)
+			empresas.GET("/consultar-cnpj/:cnpj", empresaHandler.ConsultarCNPJAPI)
+			empresas.POST("/criar-por-cnpj/:cnpj", empresaHandler.CriarEmpresaPorCNPJ)
+		}
+
+		// Manter compatibilidade com rotas antigas de NFS-e
 		nfse := api.Group("/nfse")
 		{
-			nfse.GET("/consultar", nfseHandler.ConsultarNFSe)
-			nfse.GET("/xmlnfse", nfseHandler.ConsultarXMLNFSe)
-			nfse.GET("/ultimorpsenviado", nfseHandler.UltimoRPSEnviado)
-			nfse.GET("/testar-api", nfseHandler.TestarAPIExterna)
-			nfse.POST("/sincronizar", nfseHandler.SincronizarManual)
+			nfse.GET("/consultar", documentHandler.ConsultarDocumento)
+			nfse.GET("/recent", documentHandler.DocumentosRecentes)
 		}
 	}
 

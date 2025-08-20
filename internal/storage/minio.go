@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"zemdocs/internal/logger"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"zemdocs/internal/logger"
 )
 
 // MinIOClient cliente para MinIO
@@ -62,14 +63,14 @@ func (m *MinIOClient) ensureBucket(ctx context.Context) error {
 // UploadXML faz upload de um XML para o MinIO
 func (m *MinIOClient) UploadXML(ctx context.Context, objectName string, xmlContent []byte) error {
 	reader := strings.NewReader(string(xmlContent))
-	
+
 	_, err := m.client.PutObject(ctx, m.bucketName, objectName, reader, int64(len(xmlContent)), minio.PutObjectOptions{
 		ContentType: "application/xml",
 		UserMetadata: map[string]string{
 			"upload-time": time.Now().Format(time.RFC3339),
 		},
 	})
-	
+
 	if err != nil {
 		return fmt.Errorf("erro ao fazer upload do XML: %w", err)
 	}
@@ -136,6 +137,13 @@ func (m *MinIOClient) GenerateObjectName(numeroNfse, competencia string) string 
 	year := competencia[:4]
 	month := competencia[4:6]
 	return fmt.Sprintf("nfse/%s/%s/%s.xml", year, month, numeroNfse)
+}
+
+// GenerateObjectNameWithCNPJ gera nome do objeto com CNPJ do prestador
+func (m *MinIOClient) GenerateObjectNameWithCNPJ(numeroNfse, competencia, cnpjPrestador string) string {
+	year := competencia[:4]
+	monthYear := competencia[4:6] + competencia[:4] // formato MMYYYY
+	return fmt.Sprintf("XML/NFS/%s/%s/%s/%s.xml", year, monthYear, cnpjPrestador, numeroNfse)
 }
 
 // GetObjectURL gera URL pré-assinada para download

@@ -2,215 +2,207 @@ package service
 
 import (
 	"context"
-	"errors"
-	"regexp"
+	"fmt"
 	"zemdocs/internal/database/model"
 	"zemdocs/internal/database/repository"
+	"zemdocs/internal/logger"
 )
 
+// EmpresaService serviço para gerenciamento de empresas
 type EmpresaService struct {
-	empresaRepo *repository.EmpresaRepository
+	empresaRepo  *repository.EmpresaRepository
+	cnpjaService *CNPJAService
 }
 
-func NewEmpresaService(empresaRepo *repository.EmpresaRepository) *EmpresaService {
+// NewEmpresaService cria uma nova instância do serviço de empresas
+func NewEmpresaService(empresaRepo *repository.EmpresaRepository, cnpjaService *CNPJAService) *EmpresaService {
 	return &EmpresaService{
-		empresaRepo: empresaRepo,
+		empresaRepo:  empresaRepo,
+		cnpjaService: cnpjaService,
 	}
 }
 
-// CreateEmpresa cria uma nova empresa
-func (s *EmpresaService) CreateEmpresa(ctx context.Context, empresa *model.Empresa) (*model.Empresa, error) {
+// ConsultarCNPJAPI consulta dados de CNPJ na API sem salvar
+func (s *EmpresaService) ConsultarCNPJAPI(ctx context.Context, cnpj string) (*model.CNPJAResponse, error) {
 	// Validar CNPJ
-	if !s.isValidCNPJ(empresa.CNPJ) {
-		return nil, errors.New("CNPJ inválido")
+	if !s.cnpjaService.ValidarCNPJ(cnpj) {
+		return nil, fmt.Errorf("CNPJ inválido")
 	}
 
-	// Verificar se CNPJ já existe
-	existing, _ := s.empresaRepo.GetByCNPJ(ctx, empresa.CNPJ)
-	if existing != nil {
-		return nil, errors.New("CNPJ já cadastrado")
-	}
-
-	// Limpar e formatar CNPJ
-	empresa.CNPJ = s.formatCNPJ(empresa.CNPJ)
-
-	err := s.empresaRepo.Create(ctx, empresa)
-	if err != nil {
-		return nil, err
-	}
-
-	return empresa, nil
+	// Consultar na API
+	return s.cnpjaService.ConsultarCNPJ(ctx, cnpj)
 }
 
-// GetEmpresaByCNPJ busca empresa por CNPJ
-func (s *EmpresaService) GetEmpresaByCNPJ(ctx context.Context, cnpj string) (*model.EmpresaResponse, error) {
-	cnpj = s.cleanCNPJ(cnpj)
-	empresa, err := s.empresaRepo.GetByCNPJ(ctx, cnpj)
-	if err != nil {
-		return nil, err
-	}
-
-	// Buscar atividades secundárias
-	atividades, _ := s.empresaRepo.GetAtividadesByEmpresa(ctx, empresa.ID)
-
-	return s.toResponse(empresa, atividades), nil
-}
-
-// GetEmpresaByID busca empresa por ID
-func (s *EmpresaService) GetEmpresaByID(ctx context.Context, id int) (*model.EmpresaResponse, error) {
+// ConsultarPorID consulta uma empresa por ID
+func (s *EmpresaService) ConsultarPorID(ctx context.Context, id int) (*model.EmpresaResponse, error) {
 	empresa, err := s.empresaRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("erro ao buscar empresa: %w", err)
 	}
 
-	// Buscar atividades secundárias
-	atividades, _ := s.empresaRepo.GetAtividadesByEmpresa(ctx, empresa.ID)
-
-	return s.toResponse(empresa, atividades), nil
+	return s.toEmpresaResponse(empresa), nil
 }
 
-// ListEmpresas lista empresas com paginação
-func (s *EmpresaService) ListEmpresas(ctx context.Context, page, limit int) ([]*model.EmpresaResponse, int, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+// ConsultarPorCNPJ consulta uma empresa por CNPJ
+func (s *EmpresaService) ConsultarPorCNPJ(ctx context.Context, cnpj string) (*model.EmpresaResponse, error) {
+	// Formatar CNPJ
+	cnpjFormatado := s.cnpjaService.FormatarCNPJ(cnpj)
+
+	empresa, err := s.empresaRepo.GetByCNPJ(ctx, cnpjFormatado)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar empresa: %w", err)
 	}
 
-	offset := (page - 1) * limit
+	return s.toEmpresaResponse(empresa), nil
+}
 
+// ListarEmpresas lista todas as empresas com paginação
+func (s *EmpresaService) ListarEmpresas(ctx context.Context, limit, offset int) ([]*model.EmpresaResponse, error) {
 	empresas, err := s.empresaRepo.GetAll(ctx, limit, offset)
 	if err != nil {
-		return nil, 0, err
-	}
-
-	total, err := s.empresaRepo.Count(ctx)
-	if err != nil {
-		return nil, 0, err
+		return nil, fmt.Errorf("erro ao listar empresas: %w", err)
 	}
 
 	var responses []*model.EmpresaResponse
 	for _, empresa := range empresas {
-		responses = append(responses, s.toResponseSimple(empresa))
+		responses = append(responses, s.toEmpresaResponse(empresa))
 	}
 
-	return responses, total, nil
+	return responses, nil
 }
 
-// SearchEmpresas busca empresas por termo
-func (s *EmpresaService) SearchEmpresas(ctx context.Context, termo string, page, limit int) ([]*model.EmpresaResponse, int, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-
-	offset := (page - 1) * limit
-
+// BuscarEmpresas busca empresas por termo
+func (s *EmpresaService) BuscarEmpresas(ctx context.Context, termo string, limit, offset int) ([]*model.EmpresaResponse, error) {
 	empresas, err := s.empresaRepo.Search(ctx, termo, limit, offset)
 	if err != nil {
-		return nil, 0, err
-	}
-
-	total, err := s.empresaRepo.CountBySearch(ctx, termo)
-	if err != nil {
-		return nil, 0, err
+		return nil, fmt.Errorf("erro ao buscar empresas: %w", err)
 	}
 
 	var responses []*model.EmpresaResponse
 	for _, empresa := range empresas {
-		responses = append(responses, s.toResponseSimple(empresa))
+		responses = append(responses, s.toEmpresaResponse(empresa))
 	}
 
-	return responses, total, nil
+	return responses, nil
 }
 
-// UpdateEmpresa atualiza uma empresa
-func (s *EmpresaService) UpdateEmpresa(ctx context.Context, id int, empresa *model.Empresa) (*model.Empresa, error) {
-	existing, err := s.empresaRepo.GetByID(ctx, id)
+// CriarEmpresa cria uma empresa com dados fornecidos
+func (s *EmpresaService) CriarEmpresa(ctx context.Context, req *model.EmpresaCreateRequest) (*model.EmpresaResponse, error) {
+	// Validar CNPJ
+	if !s.cnpjaService.ValidarCNPJ(req.CNPJ) {
+		return nil, fmt.Errorf("CNPJ inválido")
+	}
+
+	// Formatar CNPJ
+	cnpjFormatado := s.cnpjaService.FormatarCNPJ(req.CNPJ)
+
+	// Verificar se empresa já existe
+	empresaExistente, err := s.empresaRepo.GetByCNPJ(ctx, cnpjFormatado)
+	if err == nil && empresaExistente != nil {
+		return nil, fmt.Errorf("empresa com CNPJ %s já existe", cnpjFormatado)
+	}
+
+	// Criar empresa
+	empresa := &model.Empresa{
+		CNPJ:         cnpjFormatado,
+		RazaoSocial:  req.RazaoSocial,
+		NomeFantasia: req.NomeFantasia,
+		Email:        req.Email,
+		Telefone:     req.Telefone,
+		Ativa:        req.Ativa,
+	}
+
+	// Salvar no banco
+	if err := s.empresaRepo.Create(ctx, empresa); err != nil {
+		return nil, fmt.Errorf("erro ao salvar empresa: %w", err)
+	}
+
+	logger.Info(fmt.Sprintf("Empresa criada manualmente: %s - %s", empresa.CNPJ, empresa.RazaoSocial))
+
+	return s.toEmpresaResponse(empresa), nil
+}
+
+// AtualizarEmpresa atualiza uma empresa
+func (s *EmpresaService) AtualizarEmpresa(ctx context.Context, id int, req *model.EmpresaUpdateRequest) (*model.EmpresaResponse, error) {
+	// Buscar empresa existente
+	empresa, err := s.empresaRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("empresa não encontrada: %w", err)
 	}
 
-	// Manter ID e timestamps
-	empresa.ID = existing.ID
-	empresa.CreatedAt = existing.CreatedAt
+	// Atualizar campos
+	empresa.RazaoSocial = req.RazaoSocial
+	empresa.NomeFantasia = req.NomeFantasia
+	empresa.Email = req.Email
+	empresa.Telefone = req.Telefone
+	empresa.Ativa = req.Ativa
 
-	err = s.empresaRepo.Update(ctx, empresa)
+	// Salvar no banco
+	if err := s.empresaRepo.Update(ctx, empresa); err != nil {
+		return nil, fmt.Errorf("erro ao atualizar empresa: %w", err)
+	}
+
+	logger.Info(fmt.Sprintf("Empresa atualizada: %s - %s", empresa.CNPJ, empresa.RazaoSocial))
+
+	return s.toEmpresaResponse(empresa), nil
+}
+
+// ExcluirEmpresa exclui uma empresa
+func (s *EmpresaService) ExcluirEmpresa(ctx context.Context, id int) error {
+	// Verificar se empresa existe
+	empresa, err := s.empresaRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("empresa não encontrada: %w", err)
 	}
 
-	return empresa, nil
-}
-
-// DeleteEmpresa remove uma empresa
-func (s *EmpresaService) DeleteEmpresa(ctx context.Context, id int) error {
-	// Remover atividades secundárias primeiro
-	s.empresaRepo.DeleteAtividadesByEmpresa(ctx, id)
-
-	return s.empresaRepo.Delete(ctx, id)
-}
-
-// AddAtividadeSecundaria adiciona uma atividade secundária
-func (s *EmpresaService) AddAtividadeSecundaria(ctx context.Context, empresaID int, atividade *model.AtividadeSecundaria) error {
-	atividade.EmpresaID = empresaID
-	return s.empresaRepo.CreateAtividadeSecundaria(ctx, atividade)
-}
-
-// Funções auxiliares
-
-func (s *EmpresaService) isValidCNPJ(cnpj string) bool {
-	cnpj = s.cleanCNPJ(cnpj)
-	if len(cnpj) != 14 {
-		return false
+	// Excluir empresa
+	if err := s.empresaRepo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("erro ao excluir empresa: %w", err)
 	}
 
-	// Verificar se todos os dígitos são iguais
-	if regexp.MustCompile(`^(\d)\1{13}$`).MatchString(cnpj) {
-		return false
-	}
+	logger.Info(fmt.Sprintf("Empresa excluída: %s - %s", empresa.CNPJ, empresa.RazaoSocial))
 
-	// Validação dos dígitos verificadores
-	return s.validateCNPJDigits(cnpj)
+	return nil
 }
 
-func (s *EmpresaService) cleanCNPJ(cnpj string) string {
-	re := regexp.MustCompile(`[^\d]`)
-	return re.ReplaceAllString(cnpj, "")
-}
-
-func (s *EmpresaService) formatCNPJ(cnpj string) string {
-	cnpj = s.cleanCNPJ(cnpj)
-	if len(cnpj) == 14 {
-		return cnpj[:2] + "." + cnpj[2:5] + "." + cnpj[5:8] + "/" + cnpj[8:12] + "-" + cnpj[12:14]
-	}
-	return cnpj
-}
-
-func (s *EmpresaService) validateCNPJDigits(cnpj string) bool {
-	// Implementação simplificada da validação do CNPJ
-	// Em produção, usar uma biblioteca específica para validação
-	if len(cnpj) != 14 {
-		return false
+// CriarEmpresaPorCNPJ cria uma empresa consultando dados na API CNPJA
+func (s *EmpresaService) CriarEmpresaPorCNPJ(ctx context.Context, cnpj string) (*model.EmpresaResponse, error) {
+	// Validar CNPJ
+	if !s.cnpjaService.ValidarCNPJ(cnpj) {
+		return nil, fmt.Errorf("CNPJ inválido")
 	}
 
-	// Validação básica dos dígitos verificadores do CNPJ
-	// Aqui seria implementada a validação completa dos dígitos
-	// Por enquanto, apenas verifica se tem 14 dígitos numéricos
-	for _, char := range cnpj {
-		if char < '0' || char > '9' {
-			return false
-		}
+	// Formatar CNPJ
+	cnpjFormatado := s.cnpjaService.FormatarCNPJ(cnpj)
+
+	// Verificar se empresa já existe
+	empresaExistente, err := s.empresaRepo.GetByCNPJ(ctx, cnpjFormatado)
+	if err == nil && empresaExistente != nil {
+		return nil, fmt.Errorf("empresa com CNPJ %s já existe", cnpjFormatado)
 	}
 
-	return true
+	// Consultar dados na API CNPJA
+	cnpjaResp, err := s.cnpjaService.ConsultarCNPJ(ctx, cnpj)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao consultar CNPJ na API: %w", err)
+	}
+
+	// Converter para modelo Empresa
+	empresa := s.cnpjaService.ConvertToEmpresa(cnpjaResp)
+
+	// Salvar empresa no banco
+	if err := s.empresaRepo.Create(ctx, empresa); err != nil {
+		return nil, fmt.Errorf("erro ao salvar empresa: %w", err)
+	}
+
+	logger.Info(fmt.Sprintf("Empresa criada com sucesso: %s - %s", empresa.CNPJ, empresa.RazaoSocial))
+
+	return s.toEmpresaResponse(empresa), nil
 }
 
-func (s *EmpresaService) toResponse(empresa *model.Empresa, atividades []*model.AtividadeSecundaria) *model.EmpresaResponse {
-	response := &model.EmpresaResponse{
+// toEmpresaResponse converte Empresa para EmpresaResponse
+func (s *EmpresaService) toEmpresaResponse(empresa *model.Empresa) *model.EmpresaResponse {
+	return &model.EmpresaResponse{
 		ID:                 empresa.ID,
 		CNPJ:               empresa.CNPJ,
 		RazaoSocial:        empresa.RazaoSocial,
@@ -230,26 +222,5 @@ func (s *EmpresaService) toResponse(empresa *model.Empresa, atividades []*model.
 			Municipio:   empresa.Municipio,
 			UF:          empresa.UF,
 		},
-	}
-
-	for _, atividade := range atividades {
-		response.AtividadesSecundarias = append(response.AtividadesSecundarias, model.AtividadeResponse{
-			Codigo:    atividade.Codigo,
-			Descricao: atividade.Descricao,
-		})
-	}
-
-	return response
-}
-
-func (s *EmpresaService) toResponseSimple(empresa *model.Empresa) *model.EmpresaResponse {
-	return &model.EmpresaResponse{
-		ID:                empresa.ID,
-		CNPJ:              empresa.CNPJ,
-		RazaoSocial:       empresa.RazaoSocial,
-		NomeFantasia:      empresa.NomeFantasia,
-		SituacaoCadastral: empresa.SituacaoCadastral,
-		Email:             empresa.Email,
-		Telefone:          empresa.Telefone,
 	}
 }

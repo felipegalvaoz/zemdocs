@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"zemdocs/internal/clientes/nfse"
+	"zemdocs/internal/clientes/documents"
 	"zemdocs/internal/database/model"
 	"zemdocs/internal/database/repository"
 	"zemdocs/internal/logger"
@@ -16,8 +16,8 @@ import (
 
 // NFSeSyncJob job para sincronizar NFS-e da prefeitura
 type NFSeSyncJob struct {
-	nfseClient  nfse.Client
-	nfseRepo    *repository.NFSeRepository
+	nfseClient  documents.Client
+	nfseRepo    *repository.DocumentRepository
 	minioClient *storage.MinIOClient
 	competencia string
 	maxRetries  int
@@ -26,8 +26,8 @@ type NFSeSyncJob struct {
 
 // NewNFSeSyncJob cria uma nova instância do job
 func NewNFSeSyncJob(
-	nfseClient nfse.Client,
-	nfseRepo *repository.NFSeRepository,
+	nfseClient documents.Client,
+	nfseRepo *repository.DocumentRepository,
 	minioClient *storage.MinIOClient,
 	competencia string,
 ) *NFSeSyncJob {
@@ -122,18 +122,18 @@ func (j *NFSeSyncJob) Execute(ctx context.Context) error {
 }
 
 // fetchNFSeByCompetencia busca NFS-e por competência
-func (j *NFSeSyncJob) fetchNFSeByCompetencia(ctx context.Context, page int) ([]nfse.Response, error) {
-	req := nfse.ConsultarXMLRequest{
+func (j *NFSeSyncJob) fetchNFSeByCompetencia(ctx context.Context, page int) ([]documents.Response, error) {
+	req := documents.ConsultarXMLRequest{
 		NrCompetencia: j.competencia,
 		NrPage:        strconv.Itoa(page),
 	}
 
-	var nfseList []nfse.Response
+	var nfseList []documents.Response
 	var err error
 
 	// Retry com backoff exponencial
 	for attempt := 1; attempt <= j.maxRetries; attempt++ {
-		nfseList, err = j.nfseClient.ConsultarXMLNFSe(ctx, req)
+		nfseList, err = j.nfseClient.ConsultarXMLDocuments(ctx, req)
 		if err == nil {
 			break
 		}
@@ -158,7 +158,7 @@ func (j *NFSeSyncJob) fetchNFSeByCompetencia(ctx context.Context, page int) ([]n
 }
 
 // processNFSe processa uma NFS-e individual
-func (j *NFSeSyncJob) processNFSe(ctx context.Context, nfseResp *nfse.Response) error {
+func (j *NFSeSyncJob) processNFSe(ctx context.Context, nfseResp *documents.Response) error {
 	// Verificar se já existe no banco
 	exists, err := j.nfseRepo.ExistsByNumeroNfse(ctx, nfseResp.NumeroNfse)
 	if err != nil {
@@ -178,16 +178,18 @@ func (j *NFSeSyncJob) processNFSe(ctx context.Context, nfseResp *nfse.Response) 
 		return fmt.Errorf("erro ao extrair metadados: %w", err)
 	}
 
-	// Criar modelo NFS-e
-	nfse := &model.NFSe{
-		NumeroNfse:        nfseResp.NumeroNfse,
+	// Criar modelo Document
+	nfse := &model.Document{
+		DocumentType:      model.DocumentTypeNFSe,
+		NumeroDocumento:   nfseResp.NumeroNfse,
 		NumeroRps:         nfseResp.NumeroRps,
 		SerieRps:          nfseResp.SerieRps,
 		TipoRps:           1, // Padrão
 		DataEmissao:       nfseResp.DataEmissao,
 		Status:            nfseResp.Status,
 		CodigoVerificacao: nfseResp.CodigoVerificacao,
-		ValorServico:      nfseResp.ValorServico,
+		ValorNota:         nfseResp.ValorServico, // Mapear ValorServico para ValorNota
+		AliquotaIss:       0,                     // Será extraído do XML se necessário
 		ValorIss:          nfseResp.ValorIss,
 		Competencia:       nfseResp.Competencia,
 		XMLContent:        "", // Não armazenar XML no banco
@@ -196,10 +198,43 @@ func (j *NFSeSyncJob) processNFSe(ctx context.Context, nfseResp *nfse.Response) 
 	// Aplicar metadados extraídos
 	if metadata != nil {
 		if metadata.ValorServico > 0 {
-			nfse.ValorServico = metadata.ValorServico
+			nfse.ValorNota = metadata.ValorServico
 		}
 		if metadata.ValorIss > 0 {
 			nfse.ValorIss = metadata.ValorIss
+		}
+		if metadata.Aliquota > 0 {
+			nfse.AliquotaIss = metadata.Aliquota
+		}
+		if metadata.CNPJPrestador != "" {
+			nfse.CNPJEmitente = metadata.CNPJPrestador
+		}
+		if metadata.RazaoSocialPrestador != "" {
+			nfse.RazaoSocialEmitente = metadata.RazaoSocialPrestador
+		}
+		if metadata.InscricaoMunicipalPrestador != "" {
+			nfse.InscricaoMunicipalEmitente = metadata.InscricaoMunicipalPrestador
+		}
+		if metadata.CNPJTomador != "" {
+			nfse.CNPJDestinatario = metadata.CNPJTomador
+		}
+		if metadata.RazaoSocialTomador != "" {
+			nfse.RazaoSocialDestinatario = metadata.RazaoSocialTomador
+		}
+		if metadata.Discriminacao != "" {
+			nfse.Discriminacao = metadata.Discriminacao
+		}
+		if metadata.CodigoServico != "" {
+			nfse.CodigoServico = metadata.CodigoServico
+		}
+		if metadata.ItemListaServico != "" {
+			nfse.ItemListaServico = metadata.ItemListaServico
+		}
+		if metadata.CodigoMunicipio != "" {
+			nfse.CodigoMunicipio = metadata.CodigoMunicipio
+		}
+		if metadata.CodigoIBGE != "" {
+			nfse.CodigoIBGE = metadata.CodigoIBGE
 		}
 	}
 
@@ -210,19 +245,32 @@ func (j *NFSeSyncJob) processNFSe(ctx context.Context, nfseResp *nfse.Response) 
 
 	// Salvar XML no MinIO
 	if nfseResp.XMLContent != "" {
-		objectName := j.minioClient.GenerateObjectName(nfseResp.NumeroNfse, nfseResp.Competencia)
+		// Usar CNPJ do prestador se disponível nos metadados, senão usar padrão
+		var objectName string
+		if metadata != nil && len(nfse.CNPJEmitente) > 0 {
+			objectName = j.minioClient.GenerateObjectNameWithCNPJ(nfseResp.NumeroNfse, nfseResp.Competencia, nfse.CNPJEmitente)
+		} else {
+			objectName = j.minioClient.GenerateObjectName(nfseResp.NumeroNfse, nfseResp.Competencia)
+		}
+
 		if err := j.minioClient.UploadXML(ctx, objectName, []byte(nfseResp.XMLContent)); err != nil {
 			logger.Database().Error().
 				Err(err).
 				Str("numero_nfse", nfseResp.NumeroNfse).
+				Str("object_name", objectName).
 				Msg("Erro ao salvar XML no MinIO")
 			// Não retornar erro, pois o registro já foi salvo no banco
+		} else {
+			logger.Database().Info().
+				Str("numero_nfse", nfseResp.NumeroNfse).
+				Str("object_name", objectName).
+				Msg("XML salvo no MinIO com sucesso")
 		}
 	}
 
 	logger.Database().Debug().
 		Str("numero_nfse", nfseResp.NumeroNfse).
-		Float64("valor_servico", nfse.ValorServico).
+		Float64("valor_nota", nfse.ValorNota).
 		Msg("NFS-e processada com sucesso")
 
 	return nil
@@ -230,9 +278,19 @@ func (j *NFSeSyncJob) processNFSe(ctx context.Context, nfseResp *nfse.Response) 
 
 // XMLMetadata metadados extraídos do XML
 type XMLMetadata struct {
-	ValorServico float64
-	ValorIss     float64
-	Descricao    string
+	ValorServico                float64
+	ValorIss                    float64
+	Aliquota                    float64
+	Discriminacao               string
+	CodigoServico               string
+	ItemListaServico            string
+	CodigoMunicipio             string
+	CodigoIBGE                  string
+	CNPJPrestador               string
+	RazaoSocialPrestador        string
+	InscricaoMunicipalPrestador string
+	CNPJTomador                 string
+	RazaoSocialTomador          string
 }
 
 // extractMetadata extrai metadados do XML da NFS-e usando o parser completo
@@ -252,9 +310,19 @@ func (j *NFSeSyncJob) extractMetadata(xmlContent string) (*XMLMetadata, error) {
 	}
 
 	metadata := &XMLMetadata{
-		ValorServico: xmlData.ValorServico,
-		ValorIss:     xmlData.ValorIss,
-		Descricao:    xmlData.Discriminacao,
+		ValorServico:                xmlData.ValorServico,
+		ValorIss:                    xmlData.ValorIss,
+		Aliquota:                    xmlData.Aliquota,
+		Discriminacao:               xmlData.Discriminacao,
+		CodigoServico:               xmlData.CodigoServico,
+		ItemListaServico:            xmlData.ItemListaServico,
+		CodigoMunicipio:             xmlData.CodigoMunicipio,
+		CodigoIBGE:                  xmlData.CodigoMunicipio, // Usar CodigoMunicipio como IBGE
+		CNPJPrestador:               xmlData.CNPJPrestador,
+		RazaoSocialPrestador:        xmlData.RazaoSocialPrestador,
+		InscricaoMunicipalPrestador: xmlData.InscricaoMunicipalPrestador,
+		CNPJTomador:                 xmlData.CNPJTomador,
+		RazaoSocialTomador:          xmlData.RazaoSocialTomador,
 	}
 
 	return metadata, nil

@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
@@ -91,12 +92,19 @@ type NFSeXMLData struct {
 
 // convertISO88591ToUTF8 converte string de ISO-8859-1 para UTF-8
 func convertISO88591ToUTF8(input string) (string, error) {
+	// Verificar se o conteúdo já é UTF-8 válido
+	if utf8.ValidString(input) {
+		// Se já é UTF-8 válido, apenas atualizar a declaração de encoding
+		result := strings.ReplaceAll(input, `encoding="ISO-8859-1"`, `encoding="UTF-8"`)
+		return result, nil
+	}
+
 	// Se já contém declaração UTF-8, não precisa converter
 	if strings.Contains(input, `encoding="UTF-8"`) {
 		return input, nil
 	}
 
-	// Converter de ISO-8859-1 para UTF-8
+	// Só converter se realmente não for UTF-8 válido
 	decoder := charmap.ISO8859_1.NewDecoder()
 	utf8Bytes, _, err := transform.Bytes(decoder, []byte(input))
 	if err != nil {
@@ -108,6 +116,70 @@ func convertISO88591ToUTF8(input string) (string, error) {
 	result = strings.ReplaceAll(result, `encoding="ISO-8859-1"`, `encoding="UTF-8"`)
 
 	return result, nil
+}
+
+// fixCorruptedChars corrige caracteres corrompidos comuns
+func fixCorruptedChars(input string) string {
+	// Usar regex para corrigir padrões de double-encoding UTF-8
+	result := input
+
+	// Padrões comuns de double-encoding UTF-8 -> ISO-8859-1 -> UTF-8
+	patterns := []struct {
+		pattern string
+		replace string
+	}{
+		// Caracteres acentuados minúsculos
+		{`Ã§`, "ç"}, // ç
+		{`Ã¡`, "á"}, // á
+		{`Ã `, "à"}, // à
+		{`Ã¢`, "â"}, // â
+		{`Ã£`, "ã"}, // ã
+		{`Ã©`, "é"}, // é
+		{`Ãª`, "ê"}, // ê
+		{`Ã­`, "í"}, // í
+		{`Ã³`, "ó"}, // ó
+		{`Ã´`, "ô"}, // ô
+		{`Ãµ`, "õ"}, // õ
+		{`Ãº`, "ú"}, // ú
+		{`Ã¼`, "ü"}, // ü
+
+		// Caracteres acentuados maiúsculos
+		{`Ã‡`, "Ç"}, // Ç
+		{`Ã`, "Á"},  // Á
+		{`Ã€`, "À"}, // À
+		{`Ã‚`, "Â"}, // Â
+		{`Ãƒ`, "Ã"}, // Ã
+		{`Ã‰`, "É"}, // É
+		{`ÃŠ`, "Ê"}, // Ê
+		{`Ã`, "Í"},  // Í
+		{`Ã"`, "Ó"}, // Ó
+		{`Ã"`, "Ô"}, // Ô
+		{`Ã•`, "Õ"}, // Õ
+		{`Ãš`, "Ú"}, // Ú
+		{`Ãœ`, "Ü"}, // Ü
+		{`Ã±`, "ñ"}, // ñ
+		{`Ã'`, "Ñ"}, // Ñ
+
+		// Casos específicos encontrados
+		{`PRESTAÃÃO`, "PRESTAÇÃO"},
+		{`SERVIÃOS`, "SERVIÇOS"},
+		{`INFORMAÃÕES`, "INFORMAÇÕES"},
+		{`MANUTENÇÃ`, "MANUTENÇÃO"},
+		{`COMISSÃ`, "COMISSÃO"},
+		{`OPERAÃÃO`, "OPERAÇÃO"},
+		{`SOLUÃÃO`, "SOLUÇÃO"},
+	}
+
+	for _, p := range patterns {
+		result = strings.ReplaceAll(result, p.pattern, p.replace)
+	}
+
+	return result
+}
+
+// FixTextEncoding função pública para corrigir encoding de texto
+func FixTextEncoding(text string) string {
+	return fixCorruptedChars(text)
 }
 
 // ParseNFSeXML extrai dados estruturados do XML da NFS-e

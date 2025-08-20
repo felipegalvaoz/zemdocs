@@ -8,13 +8,13 @@ import (
 	"syscall"
 	"time"
 
+	"zemdocs/internal/api/handlers"
 	"zemdocs/internal/api/router"
-	"zemdocs/internal/clientes/nfse"
-	"zemdocs/internal/clientes/nfse/ma/imperatriz"
+	"zemdocs/internal/clientes/documents"
+	"zemdocs/internal/clientes/documents/ma/imperatriz"
 	"zemdocs/internal/config"
 	"zemdocs/internal/database"
 	"zemdocs/internal/database/repository"
-	"zemdocs/internal/handler"
 	"zemdocs/internal/jobs"
 	"zemdocs/internal/logger"
 	"zemdocs/internal/scheduler"
@@ -62,20 +62,21 @@ func main() {
 	}
 
 	// Inicializar repositórios
-	nfseRepo := repository.NewNFSeRepository(database.DB)
+	nfseRepo := repository.NewDocumentRepository(database.DB)
+	empresaRepo := repository.NewEmpresaRepository(database.DB)
 
-	// Inicializar registry de clientes NFS-e
-	nfseRegistry := nfse.NewRegistry()
+	// Inicializar registry de clientes de documentos
+	documentsRegistry := documents.NewRegistry()
 
 	// Registrar cliente de Imperatriz-MA (código IBGE: 2105302)
 	imperatrizClient := imperatriz.NewClient(
 		cfg.NFSe.ImperatrizBaseURL,
 		cfg.NFSe.ImperatrizToken,
 	)
-	nfseRegistry.Register("2105302", imperatrizClient)
+	documentsRegistry.Register("2105302", imperatrizClient)
 
-	// Inicializar serviços
-	nfseService := service.NewNFSeService(nfseRegistry, nfseRepo, minioClient)
+	// Inicializar serviços (NFSe service removido temporariamente)
+	// nfseService := service.NewNFSeService(documentsRegistry, nfseRepo, minioClient)
 
 	// Inicializar scheduler se habilitado
 	var jobScheduler *scheduler.Scheduler
@@ -100,11 +101,16 @@ func main() {
 		logger.Info("Scheduler iniciado com sucesso")
 	}
 
+	// Inicializar serviços adicionais
+	cnpjaService := service.NewCNPJAService()
+	empresaService := service.NewEmpresaService(empresaRepo, cnpjaService)
+
 	// Inicializar handlers
-	nfseHandler := handler.NewNFSeHandler(nfseService)
+	documentHandler := handlers.NewDocumentHandler()
+	empresaHandler := handlers.NewEmpresaHandler(empresaService)
 
 	// Configurar router
-	r := router.SetupRouter(nfseHandler)
+	r := router.SetupRouter(documentHandler, empresaHandler)
 
 	// Configurar servidor
 	srv := &http.Server{

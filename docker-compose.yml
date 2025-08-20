@@ -56,6 +56,29 @@ services:
       timeout: 20s
       retries: 3
 
+  # DBGate for database management
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: zemdocs-dbgate
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      CONNECTIONS: con1
+      LABEL_con1: ZemDocs PostgreSQL
+      SERVER_con1: postgres
+      USER_con1: postgres
+      PASSWORD_con1: postgres
+      PORT_con1: 5432
+      ENGINE_con1: postgres@dbgate-plugin-postgres
+      DATABASE_con1: zemdocs
+    ports:
+      - "3002:3000"
+    networks:
+      - zemdocs_network
+    volumes:
+      - dbgate_data:/root/.dbgate
+
   api:
     build:
       context: .
@@ -85,6 +108,7 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  dbgate_data:
 
 networks:
   zemdocs_network:

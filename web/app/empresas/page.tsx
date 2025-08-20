@@ -16,14 +16,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import { EmpresasTable } from "@/components/empresas/empresas-table"
+import { EmpresasAdvancedTable } from "@/components/empresas"
 import { EmpresasStats } from "@/components/empresas/empresas-stats"
 
 export default function EmpresasPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden">
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
@@ -43,7 +43,7 @@ export default function EmpresasPage() {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">Empresas</h2>
@@ -61,8 +61,8 @@ export default function EmpresasPage() {
           <div className="grid auto-rows-min gap-4 md:grid-cols-4">
             <EmpresasStats />
           </div>
-          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min overflow-hidden">
-            <EmpresasTable />
+          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+            <EmpresasAdvancedTable />
           </div>
         </div>
       </SidebarInset>

@@ -210,7 +210,7 @@ func (s *EmpresaService) CriarEmpresaCompleta(ctx context.Context, formData *mod
 	// Verificar se empresa já existe
 	empresaExistente, err := s.empresaRepo.GetByCNPJ(ctx, cnpjLimpo)
 	if err == nil && empresaExistente != nil {
-		return nil, fmt.Errorf("⚠️ Empresa já cadastrada!\n\nUma empresa com este CNPJ já está registrada no sistema. Verifique a listagem de empresas ou use um CNPJ diferente.")
+		return nil, fmt.Errorf("empresa já cadastrada: uma empresa com este CNPJ já está registrada no sistema")
 	}
 
 	// Converter dados do formulário para modelo Empresa
@@ -261,44 +261,6 @@ func (s *EmpresaService) toEmpresaResponse(empresa *model.Empresa) *model.Empres
 			Municipio:   empresa.Municipio,
 			UF:          empresa.UF,
 		},
-	}
-
-	return response
-}
-
-// toEmpresaResponseWithInscricoes converte Empresa para EmpresaResponse incluindo inscrições estaduais
-func (s *EmpresaService) toEmpresaResponseWithInscricoes(ctx context.Context, empresa *model.Empresa) *model.EmpresaResponse {
-	response := s.toEmpresaResponse(empresa)
-
-	// Buscar inscrições estaduais
-	inscricoes, err := s.empresaRepo.GetInscricoesEstaduaisByEmpresa(ctx, empresa.ID)
-	if err == nil && len(inscricoes) > 0 {
-		for _, inscricao := range inscricoes {
-			response.InscricoesEstaduais = append(response.InscricoesEstaduais, model.InscricaoEstadualResponse{
-				ID:         inscricao.ID,
-				Numero:     inscricao.Numero,
-				Estado:     inscricao.Estado,
-				Ativa:      inscricao.Ativa,
-				DataStatus: inscricao.DataStatus,
-				StatusID:   inscricao.StatusID,
-				StatusNome: inscricao.StatusNome,
-				TipoID:     inscricao.TipoID,
-				TipoNome:   inscricao.TipoNome,
-			})
-		}
-
-		// Se há inscrições estaduais, usar a primeira ativa como inscrição principal
-		for _, inscricao := range inscricoes {
-			if inscricao.Ativa && inscricao.Numero != "" {
-				// Atualizar o campo inscricao_estadual da empresa se estiver vazio
-				if empresa.InscricaoEstadual == "" {
-					empresa.InscricaoEstadual = inscricao.Numero
-					// Salvar no banco para futuras consultas
-					s.empresaRepo.Update(ctx, empresa)
-				}
-				break
-			}
-		}
 	}
 
 	return response

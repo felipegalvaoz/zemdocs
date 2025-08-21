@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/sidebar"
 import { SidebarWrapper } from "@/components/sidebar-wrapper"
 
-import EmpresasEnhancedTable from "@/components/empresas/empresas-enhanced-table"
+import EnhancedOriginTable from "@/components/empresas/enhanced-origin-table"
 
-export default function EmpresasPage() {
+export default function DemoTablePage() {
   return (
     <SidebarWrapper>
       <AppSidebar />
@@ -35,14 +35,14 @@ export default function EmpresasPage() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Empresas</BreadcrumbPage>
+                  <BreadcrumbPage>Enhanced Table Demo</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0">
-          <EmpresasEnhancedTable />
+          <EnhancedOriginTable />
         </div>
       </SidebarInset>
     </SidebarWrapper>

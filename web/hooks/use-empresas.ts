@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 
 export interface Empresa {
@@ -162,6 +162,15 @@ export interface CNPJData {
 export function useEmpresas() {
   const [loading, setLoading] = useState(false)
   const [empresas, setEmpresas] = useState<Empresa[]>([])
+  const cacheRef = useRef<Map<string, { data: any; timestamp: number }>>(new Map())
+
+  // Cache duration: 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000
+
+  // Check if cache is valid
+  const isCacheValid = (timestamp: number) => {
+    return Date.now() - timestamp < CACHE_DURATION
+  }
 
   // Listar empresas
   const listarEmpresas = useCallback(async (params?: {
@@ -177,8 +186,9 @@ export function useEmpresas() {
       if (params?.search) searchParams.set('search', params.search)
 
       const response = await fetch(`/api/empresas?${searchParams}`)
+
       if (!response.ok) {
-        throw new Error('Erro ao listar empresas')
+        throw new Error(`Erro ao listar empresas: ${response.status}`)
       }
 
       const data = await response.json()

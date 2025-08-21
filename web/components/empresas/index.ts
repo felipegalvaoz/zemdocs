@@ -1,4 +1,12 @@
-export { EmpresasStats } from './empresas-stats'
-export { default as EmpresasOriginTable } from './empresas-origin-table'
-export { default as EnhancedOriginTable } from './enhanced-origin-table'
-export { default as EmpresasEnhancedTable } from './empresas-enhanced-table'
+// Componente principal
+export { default as EmpresasEnhancedTable } from './enhanced-table'
+
+// Componentes modulares
+export { SearchBar } from './search'
+export { TableHeader } from './header'
+export { DataTable } from './table'
+export { PaginationControls } from './pagination'
+export { createEmpresasColumns } from './columns'
+
+// Componentes auxiliares
+export { EmpresasStats } from './stats'

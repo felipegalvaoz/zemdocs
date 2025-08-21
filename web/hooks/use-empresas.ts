@@ -159,9 +159,30 @@ export interface CNPJData {
   dados_suframa: SuframaForm[]
 }
 
+// Interface para resposta paginada
+export interface EmpresasPaginatedResponse {
+  empresas: Empresa[]
+  total: number
+  limit: number
+  offset: number
+  page: number
+  pages: number
+}
+
 export function useEmpresas() {
   const [loading, setLoading] = useState(false)
   const [empresas, setEmpresas] = useState<Empresa[]>([])
+  const [paginationInfo, setPaginationInfo] = useState<{
+    total: number
+    page: number
+    pages: number
+    limit: number
+  }>({
+    total: 0,
+    page: 1,
+    pages: 0,
+    limit: 100
+  })
   const cacheRef = useRef<Map<string, { data: any; timestamp: number }>>(new Map())
 
   // Cache duration: 5 minutes
@@ -172,17 +193,24 @@ export function useEmpresas() {
     return Date.now() - timestamp < CACHE_DURATION
   }
 
-  // Listar empresas
+  // Listar empresas com paginação server-side
   const listarEmpresas = useCallback(async (params?: {
     limit?: number
     offset?: number
+    page?: number
     search?: string
-  }) => {
+  }): Promise<EmpresasPaginatedResponse> => {
     setLoading(true)
     try {
       const searchParams = new URLSearchParams()
-      if (params?.limit) searchParams.set('limit', params.limit.toString())
-      if (params?.offset) searchParams.set('offset', params.offset.toString())
+
+      // Configurar paginação - padrão 100 registros por página
+      const limit = params?.limit || 100
+      const page = params?.page || 1
+      const offset = params?.offset ?? (page - 1) * limit
+
+      searchParams.set('limit', limit.toString())
+      searchParams.set('offset', offset.toString())
       if (params?.search) searchParams.set('search', params.search)
 
       const response = await fetch(`/api/empresas?${searchParams}`)
@@ -191,8 +219,17 @@ export function useEmpresas() {
         throw new Error(`Erro ao listar empresas: ${response.status}`)
       }
 
-      const data = await response.json()
+      const data: EmpresasPaginatedResponse = await response.json()
+
+      // Atualizar estado
       setEmpresas(data.empresas || [])
+      setPaginationInfo({
+        total: data.total,
+        page: data.page,
+        pages: data.pages,
+        limit: data.limit
+      })
+
       return data
     } catch (error) {
       console.error('Erro ao listar empresas:', error)
@@ -399,6 +436,7 @@ export function useEmpresas() {
   return {
     loading,
     empresas,
+    paginationInfo,
     listarEmpresas,
     buscarEmpresaPorId,
     buscarEmpresaPorCnpj,

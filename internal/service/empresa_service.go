@@ -96,6 +96,24 @@ func (s *EmpresaService) BuscarEmpresas(ctx context.Context, termo string, limit
 	return responses, nil
 }
 
+// ContarEmpresas retorna o total de empresas
+func (s *EmpresaService) ContarEmpresas(ctx context.Context) (int, error) {
+	total, err := s.empresaRepo.Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("erro ao contar empresas: %w", err)
+	}
+	return total, nil
+}
+
+// ContarEmpresasPorBusca retorna o total de empresas que correspondem ao termo de busca
+func (s *EmpresaService) ContarEmpresasPorBusca(ctx context.Context, termo string) (int, error) {
+	total, err := s.empresaRepo.CountBySearch(ctx, termo)
+	if err != nil {
+		return 0, fmt.Errorf("erro ao contar empresas por busca: %w", err)
+	}
+	return total, nil
+}
+
 // AtualizarEmpresa atualiza uma empresa
 func (s *EmpresaService) AtualizarEmpresa(ctx context.Context, id int, req *model.EmpresaUpdateRequest) (*model.EmpresaResponse, error) {
 	// Buscar empresa existente
@@ -245,9 +263,43 @@ func (s *EmpresaService) toEmpresaResponse(empresa *model.Empresa) *model.Empres
 		},
 	}
 
-	// TODO: Carregar dados relacionados (membros, telefones, emails, etc.)
-	// Por enquanto, retorna apenas os dados básicos para manter compatibilidade
-	// Os dados relacionados serão carregados em endpoints específicos
+	return response
+}
+
+// toEmpresaResponseWithInscricoes converte Empresa para EmpresaResponse incluindo inscrições estaduais
+func (s *EmpresaService) toEmpresaResponseWithInscricoes(ctx context.Context, empresa *model.Empresa) *model.EmpresaResponse {
+	response := s.toEmpresaResponse(empresa)
+
+	// Buscar inscrições estaduais
+	inscricoes, err := s.empresaRepo.GetInscricoesEstaduaisByEmpresa(ctx, empresa.ID)
+	if err == nil && len(inscricoes) > 0 {
+		for _, inscricao := range inscricoes {
+			response.InscricoesEstaduais = append(response.InscricoesEstaduais, model.InscricaoEstadualResponse{
+				ID:         inscricao.ID,
+				Numero:     inscricao.Numero,
+				Estado:     inscricao.Estado,
+				Ativa:      inscricao.Ativa,
+				DataStatus: inscricao.DataStatus,
+				StatusID:   inscricao.StatusID,
+				StatusNome: inscricao.StatusNome,
+				TipoID:     inscricao.TipoID,
+				TipoNome:   inscricao.TipoNome,
+			})
+		}
+
+		// Se há inscrições estaduais, usar a primeira ativa como inscrição principal
+		for _, inscricao := range inscricoes {
+			if inscricao.Ativa && inscricao.Numero != "" {
+				// Atualizar o campo inscricao_estadual da empresa se estiver vazio
+				if empresa.InscricaoEstadual == "" {
+					empresa.InscricaoEstadual = inscricao.Numero
+					// Salvar no banco para futuras consultas
+					s.empresaRepo.Update(ctx, empresa)
+				}
+				break
+			}
+		}
+	}
 
 	return response
 }

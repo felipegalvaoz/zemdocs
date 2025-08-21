@@ -7,7 +7,7 @@ import { ArrowLeft, Building2, Loader2, Edit, Trash2 } from "lucide-react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import {
@@ -148,7 +148,7 @@ export default function VisualizarEmpresaPage() {
                     <AlertDialogTitle>Tem certeza que deseja excluir?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Esta ação não pode ser desfeita. Isso excluirá permanentemente a empresa
-                      "{empresa.razao_social}" e todos os dados relacionados.
+                      &quot;{empresa.razao_social}&quot; e todos os dados relacionados.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

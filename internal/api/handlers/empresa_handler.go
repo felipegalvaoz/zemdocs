@@ -93,13 +93,13 @@ func (h *EmpresaHandler) CriarEmpresaCompleta(c *gin.Context) {
 // ListarEmpresas lista todas as empresas com paginação
 func (h *EmpresaHandler) ListarEmpresas(c *gin.Context) {
 	// Parâmetros de paginação
-	limitStr := c.DefaultQuery("limit", "20")
+	limitStr := c.DefaultQuery("limit", "100")
 	offsetStr := c.DefaultQuery("offset", "0")
 	search := c.Query("search")
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 {
-		limit = 20
+		limit = 100
 	}
 
 	offset, err := strconv.Atoi(offsetStr)
@@ -108,23 +108,41 @@ func (h *EmpresaHandler) ListarEmpresas(c *gin.Context) {
 	}
 
 	var empresas []*model.EmpresaResponse
+	var total int
 
 	if search != "" {
 		empresas, err = h.empresaService.BuscarEmpresas(c.Request.Context(), search, limit, offset)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar empresas"})
+			return
+		}
+		// Obter total de resultados da busca
+		total, err = h.empresaService.ContarEmpresasPorBusca(c.Request.Context(), search)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao contar empresas"})
+			return
+		}
 	} else {
 		empresas, err = h.empresaService.ListarEmpresas(c.Request.Context(), limit, offset)
-	}
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao listar empresas"})
-		return
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao listar empresas"})
+			return
+		}
+		// Obter total de empresas
+		total, err = h.empresaService.ContarEmpresas(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao contar empresas"})
+			return
+		}
 	}
 
 	response := gin.H{
 		"empresas": empresas,
 		"limit":    limit,
 		"offset":   offset,
-		"total":    len(empresas),
+		"total":    total,
+		"page":     (offset / limit) + 1,
+		"pages":    (total + limit - 1) / limit, // Ceiling division
 	}
 
 	c.JSON(http.StatusOK, response)

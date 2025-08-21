@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { SidebarWrapper } from "@/components/sidebar-wrapper"
 
-import EmpresasEnhancedTable from "@/components/empresas/empresas-enhanced-table"
+import EmpresasEnhancedTable from "@/components/empresas/enhanced-table"
 
 export default function EmpresasPage() {
   return (

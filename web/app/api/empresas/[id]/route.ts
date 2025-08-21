@@ -11,7 +11,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/empresas/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/empresas/${id}/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/empresas/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/empresas/${id}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/empresas/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/empresas/${id}/`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

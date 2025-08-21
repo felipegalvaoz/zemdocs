@@ -13,7 +13,7 @@ export const apiClient = {
     return response
   },
 
-  post: async (endpoint: string, body?: any) => {
+  post: async (endpoint: string, body?: unknown) => {
     const response = await fetch(`${API_BASE_URL}/api/v1${endpoint}`, {
       method: 'POST',
       headers: {
@@ -25,7 +25,7 @@ export const apiClient = {
     return response
   },
 
-  put: async (endpoint: string, body?: any) => {
+  put: async (endpoint: string, body?: unknown) => {
     const response = await fetch(`${API_BASE_URL}/api/v1${endpoint}`, {
       method: 'PUT',
       headers: {

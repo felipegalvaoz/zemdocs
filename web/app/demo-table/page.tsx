@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { SidebarWrapper } from "@/components/sidebar-wrapper"
 
-import EnhancedOriginTable from "@/components/empresas/enhanced-origin-table"
+import { EmpresasEnhancedTable } from "@/components/empresas"
 
 export default function DemoTablePage() {
   return (
@@ -42,7 +42,7 @@ export default function DemoTablePage() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0">
-          <EnhancedOriginTable />
+          <EmpresasEnhancedTable />
         </div>
       </SidebarInset>
     </SidebarWrapper>

@@ -188,3 +188,14 @@ func (r *EmpresaRepository) CreateEmail(ctx context.Context, email *model.Empres
 	_, err := r.db.NewInsert().Model(email).Exec(ctx)
 	return err
 }
+
+// GetInscricoesEstaduaisByEmpresa busca inscrições estaduais de uma empresa
+func (r *EmpresaRepository) GetInscricoesEstaduaisByEmpresa(ctx context.Context, empresaID int) ([]*model.EmpresaInscricaoEstadual, error) {
+	var inscricoes []*model.EmpresaInscricaoEstadual
+	err := r.db.NewSelect().
+		Model(&inscricoes).
+		Where("empresa_id = ?", empresaID).
+		Order("estado ASC, numero ASC").
+		Scan(ctx)
+	return inscricoes, err
+}

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const offset = searchParams.get('offset') || '0'
     const search = searchParams.get('search') || ''
 
-    let url = `${API_BASE_URL}/api/v1/empresas?limit=${limit}&offset=${offset}`
+    let url = `${API_BASE_URL}/api/v1/empresas/?limit=${limit}&offset=${offset}`
     if (search) {
       url += `&search=${encodeURIComponent(search)}`
     }
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/empresas`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/empresas/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

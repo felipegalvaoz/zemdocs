@@ -17,7 +17,7 @@ export function ConfiguracoesAPI() {
       // TODO: Implementar teste real de conexão
       await new Promise(resolve => setTimeout(resolve, 2000))
       setConnectionStatus('success')
-    } catch (error) {
+    } catch {
       setConnectionStatus('error')
     } finally {
       setIsTestingConnection(false)

@@ -171,7 +171,7 @@ export default function NovaEmpresaPage() {
   }
 
   // Function to update form data
-  const updateFormData = (field: keyof EmpresaCreateRequest, value: any) => {
+  const updateFormData = (field: keyof EmpresaCreateRequest, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -205,8 +205,8 @@ export default function NovaEmpresaPage() {
         errorMessage.includes('duplicate key') ||
         errorMessage.includes('unique constraint') ||
         errorMessage.includes('UNIQUE constraint failed') ||
-        (error as any)?.status === 400 ||
-        (error as any)?.response?.status === 400
+        (error as { status?: number })?.status === 400 ||
+        (error as { response?: { status?: number } })?.response?.status === 400
 
       if (isDuplicateError) {
         setDuplicateError(`Uma empresa com o CNPJ ${formData.cnpj} já está registrada no sistema.`)

@@ -35,75 +35,10 @@ export function DocumentTable() {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        // TODO: Substituir por chamada real à API
-        // const response = await fetch('/api/v1/documents')
-        // const data = await response.json()
+        const response = await fetch('/api/documents')
+        const data = await response.json()
 
-        // Dados simulados
-        const mockData: Document[] = [
-          {
-            id: 1,
-            document_type: "NFS-e",
-            numero_documento: "240000065",
-            codigo_verificacao: "daa9549a4e9ceadd0b18d84f60a41906",
-            razao_social_emitente: "S. E. L. DE SOUZA SUARES VEICULOS",
-            razao_social_destinatario: "BANCO VOTORANTIM S.A.",
-            valor_nota: 12525.54,
-            data_emissao: "2024-08-22T09:44:48Z",
-            status: "Emitida",
-            competencia: "202408"
-          },
-          {
-            id: 2,
-            document_type: "NF-e",
-            numero_documento: "240000064",
-            codigo_verificacao: "abc123def456ghi789jkl012mno345pqr",
-            razao_social_emitente: "TECH SOLUTIONS LTDA",
-            razao_social_destinatario: "EMPRESA ABC LTDA",
-            valor_nota: 8750.00,
-            data_emissao: "2024-08-21T14:30:22Z",
-            status: "Emitida",
-            competencia: "202408"
-          },
-          {
-            id: 3,
-            document_type: "NFS-e",
-            numero_documento: "240000063",
-            codigo_verificacao: "xyz789abc123def456ghi789jkl012mno",
-            razao_social_emitente: "CONSULTORIA XYZ",
-            razao_social_destinatario: "INDUSTRIA DEF S.A.",
-            valor_nota: 15200.75,
-            data_emissao: "2024-08-21T11:15:10Z",
-            status: "Emitida",
-            competencia: "202408"
-          },
-          {
-            id: 4,
-            document_type: "CT-e",
-            numero_documento: "240000062",
-            codigo_verificacao: "def456ghi789jkl012mno345pqr678stu",
-            razao_social_emitente: "SERVIÇOS GERAIS LTDA",
-            razao_social_destinatario: "COMERCIO GHI LTDA",
-            valor_nota: 3450.00,
-            data_emissao: "2024-08-20T16:45:33Z",
-            status: "Cancelada",
-            competencia: "202408"
-          },
-          {
-            id: 5,
-            document_type: "NFS-e",
-            numero_documento: "240000061",
-            codigo_verificacao: "ghi789jkl012mno345pqr678stu901vwx",
-            razao_social_emitente: "DESENVOLVIMENTO WEB",
-            razao_social_destinatario: "STARTUP JKL",
-            valor_nota: 22100.00,
-            data_emissao: "2024-08-20T10:20:15Z",
-            status: "Emitida",
-            competencia: "202408"
-          }
-        ]
-
-        setDocumentList(mockData)
+        setDocumentList(data.documents || [])
       } catch (error) {
         console.error('Erro ao buscar documentos:', error)
       } finally {

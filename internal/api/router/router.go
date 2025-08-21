@@ -51,6 +51,7 @@ func SetupRouter(documentHandler *handlers.DocumentHandler, empresaHandler *hand
 		empresas := api.Group("/empresas")
 		{
 			empresas.GET("/", empresaHandler.ListarEmpresas)
+			empresas.GET("/stats", empresaHandler.EstatisticasEmpresas)
 			empresas.GET("/:id", empresaHandler.ConsultarEmpresaPorID)
 			empresas.GET("/cnpj/:cnpj", empresaHandler.ConsultarEmpresaPorCNPJ)
 			empresas.POST("/", empresaHandler.CriarEmpresa)

@@ -36,59 +36,10 @@ export function EmpresasTable() {
   useEffect(() => {
     const fetchEmpresas = async () => {
       try {
-        // TODO: Substituir por chamada real à API
-        // const response = await fetch('/api/v1/empresas')
-        // const data = await response.json()
-        
-        // Dados simulados
-        const mockData: Empresa[] = [
-          {
-            id: 1,
-            cnpj: "34.194.865/0001-58",
-            razao_social: "S. E. L. DE SOUZA SUARES VEICULOS",
-            nome_fantasia: "SUARES VEÍCULOS",
-            situacao_cadastral: "ATIVA",
-            porte: "MICRO EMPRESA",
-            municipio: "IMPERATRIZ",
-            uf: "MA",
-            data_abertura: "2015-03-15"
-          },
-          {
-            id: 2,
-            cnpj: "12.345.678/0001-90",
-            razao_social: "TECH SOLUTIONS LTDA",
-            nome_fantasia: "TECH SOLUTIONS",
-            situacao_cadastral: "ATIVA",
-            porte: "PEQUENO PORTE",
-            municipio: "SÃO LUÍS",
-            uf: "MA",
-            data_abertura: "2020-08-22"
-          },
-          {
-            id: 3,
-            cnpj: "98.765.432/0001-10",
-            razao_social: "CONSULTORIA XYZ LTDA",
-            nome_fantasia: "CONSULTORIA XYZ",
-            situacao_cadastral: "ATIVA",
-            porte: "MICRO EMPRESA",
-            municipio: "IMPERATRIZ",
-            uf: "MA",
-            data_abertura: "2018-11-05"
-          },
-          {
-            id: 4,
-            cnpj: "11.222.333/0001-44",
-            razao_social: "SERVIÇOS GERAIS LTDA",
-            nome_fantasia: "SERVIÇOS GERAIS",
-            situacao_cadastral: "SUSPENSA",
-            porte: "MICRO EMPRESA",
-            municipio: "AÇAILÂNDIA",
-            uf: "MA",
-            data_abertura: "2019-02-10"
-          }
-        ]
-        
-        setEmpresas(mockData)
+        const response = await fetch('/api/empresas')
+        const data = await response.json()
+
+        setEmpresas(data.empresas || [])
       } catch (error) {
         console.error('Erro ao buscar empresas:', error)
       } finally {

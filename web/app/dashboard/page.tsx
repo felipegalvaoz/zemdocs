@@ -10,9 +10,9 @@ import {
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
-  SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { SidebarWrapper } from "@/components/sidebar-wrapper"
 import { DocumentStatsCard } from "@/components/dashboard/document-stats-card"
 import { RevenueCard } from "@/components/dashboard/revenue-card"
 import { MonthlyGrowthCard } from "@/components/dashboard/monthly-growth-card"
@@ -21,7 +21,7 @@ import { RecentDocumentsList } from "@/components/dashboard/recent-documents-lis
 
 export default function Page() {
   return (
-    <SidebarProvider>
+    <SidebarWrapper>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -58,6 +58,6 @@ export default function Page() {
           </div>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </SidebarWrapper>
   )
 }

@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
@@ -10,16 +11,16 @@ import {
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
-  SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { SidebarWrapper } from "@/components/sidebar-wrapper"
 import { DocumentTable } from "@/components/documents/document-table"
 import { DocumentFilters } from "@/components/documents/document-filters"
 import { DocumentActions } from "@/components/documents/document-actions"
 
 export default function DocumentsPage() {
   return (
-    <SidebarProvider>
+    <SidebarWrapper>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -29,8 +30,8 @@ export default function DocumentsPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">
-                    Dashboard
+                  <BreadcrumbLink asChild>
+                    <Link href="/dashboard">Dashboard</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
@@ -51,6 +52,6 @@ export default function DocumentsPage() {
           </div>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </SidebarWrapper>
   )
 }

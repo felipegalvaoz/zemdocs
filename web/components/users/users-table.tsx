@@ -35,51 +35,10 @@ export function UsersTable() {
   useEffect(() => {
     const fetchUsuarios = async () => {
       try {
-        // TODO: Substituir por chamada real à API
-        // const response = await fetch('/api/v1/users')
-        // const data = await response.json()
-        
-        // Dados simulados
-        const mockData: Usuario[] = [
-          {
-            id: 1,
-            name: "Administrador",
-            email: "admin@zemdocs.com",
-            role: "admin",
-            status: "ativo",
-            created_at: "2024-01-15T10:30:00Z",
-            last_login: "2024-08-20T14:22:00Z"
-          },
-          {
-            id: 2,
-            name: "João Silva",
-            email: "joao.silva@empresa.com",
-            role: "user",
-            status: "ativo",
-            created_at: "2024-03-22T09:15:00Z",
-            last_login: "2024-08-19T16:45:00Z"
-          },
-          {
-            id: 3,
-            name: "Maria Santos",
-            email: "maria.santos@empresa.com",
-            role: "user",
-            status: "ativo",
-            created_at: "2024-05-10T11:20:00Z",
-            last_login: "2024-08-18T08:30:00Z"
-          },
-          {
-            id: 4,
-            name: "Pedro Costa",
-            email: "pedro.costa@empresa.com",
-            role: "user",
-            status: "inativo",
-            created_at: "2024-02-28T14:45:00Z",
-            last_login: "2024-07-15T12:00:00Z"
-          }
-        ]
-        
-        setUsuarios(mockData)
+        const response = await fetch('/api/users')
+        const data = await response.json()
+
+        setUsuarios(data.users || [])
       } catch (error) {
         console.error('Erro ao buscar usuários:', error)
       } finally {

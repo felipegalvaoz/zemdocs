@@ -193,81 +193,7 @@ const formatCurrency = (value?: number) => {
   return `R$ ${parts.join(',')}`
 }
 
-// Dados mock para demonstração
-const mockEmpresas: Empresa[] = [
-  {
-    id: 1,
-    cnpj: "34.194.865/0001-58",
-    razao_social: "S. E. L. DE SOUZA SUARES VEICULOS",
-    nome_fantasia: "SUARES VEÍCULOS",
-    situacao_cadastral: "ATIVA",
-    porte: "MICRO EMPRESA",
-    municipio: "IMPERATRIZ",
-    uf: "MA",
-    data_abertura: "2015-03-15",
-    email: "contato@suaresveiculos.com.br",
-    telefone: "(99) 3524-1234",
-    atividade_principal: "Comércio a varejo de automóveis",
-    capital_social: 50000
-  },
-  {
-    id: 2,
-    cnpj: "12.345.678/0001-90",
-    razao_social: "TECH SOLUTIONS LTDA",
-    nome_fantasia: "TECH SOLUTIONS",
-    situacao_cadastral: "ATIVA",
-    porte: "PEQUENO PORTE",
-    municipio: "SÃO LUÍS",
-    uf: "MA",
-    data_abertura: "2024-08-22",
-    email: "contato@techsolutions.com.br",
-    telefone: "(98) 3234-5678",
-    atividade_principal: "Desenvolvimento de software",
-    capital_social: 100000
-  },
-  {
-    id: 3,
-    cnpj: "98.765.432/0001-10",
-    razao_social: "CONSULTORIA XYZ LTDA",
-    nome_fantasia: "CONSULTORIA XYZ",
-    situacao_cadastral: "SUSPENSA",
-    porte: "MICRO EMPRESA",
-    municipio: "IMPERATRIZ",
-    uf: "MA",
-    data_abertura: "2023-11-05",
-    email: "contato@consultoriaxyz.com.br",
-    telefone: "(99) 3456-7890",
-    atividade_principal: "Consultoria empresarial",
-    capital_social: 25000
-  },
-  {
-    id: 4,
-    cnpj: "11.222.333/0001-44",
-    razao_social: "COMERCIO ABC LTDA",
-    nome_fantasia: "ABC COMERCIO",
-    situacao_cadastral: "INAPTA",
-    porte: "MICRO EMPRESA",
-    municipio: "TIMON",
-    uf: "MA",
-    data_abertura: "2017-06-10",
-    capital_social: 15000
-  },
-  {
-    id: 5,
-    cnpj: "55.666.777/0001-88",
-    razao_social: "INDUSTRIA DEF S.A.",
-    nome_fantasia: "DEF INDUSTRIA",
-    situacao_cadastral: "ATIVA",
-    porte: "MEDIO PORTE",
-    municipio: "SÃO LUÍS",
-    uf: "MA",
-    data_abertura: "2010-01-15",
-    email: "contato@defindustria.com.br",
-    telefone: "(98) 3333-4444",
-    atividade_principal: "Fabricação de produtos diversos",
-    capital_social: 500000
-  }
-]
+
 
 // Definição das colunas da tabela
 const columns: ColumnDef<Empresa>[] = [
@@ -418,7 +344,7 @@ export default function EmpresasAdvancedTable() {
 
   // Hook para gerenciar empresas
   const { empresas, loading, listarEmpresas, excluirEmpresa } = useEmpresas()
-  const [data, setData] = useState<Empresa[]>(mockEmpresas) // Usar mock por enquanto
+  const [data, setData] = useState<Empresa[]>([])
 
   // Carregar dados das empresas
   useEffect(() => {
@@ -427,7 +353,6 @@ export default function EmpresasAdvancedTable() {
         await listarEmpresas({ limit: 100, offset: 0 })
       } catch (error) {
         console.error('Erro ao carregar empresas:', error)
-        // Manter dados mock em caso de erro
       }
     }
 

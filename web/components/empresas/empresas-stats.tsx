@@ -23,26 +23,23 @@ export function EmpresasStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // TODO: Substituir por chamada real à API
-        // const response = await fetch('/api/v1/empresas/stats')
-        // const data = await response.json()
-        
-        // Dados simulados
-        const mockData = {
-          total: 1247,
-          ativas: 1189,
-          novasEsteAno: 89,
-          porUF: {
-            "MA": 856,
-            "SP": 234,
-            "RJ": 89,
-            "MG": 68
-          }
+        const response = await fetch('/api/empresas/stats')
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
-        
-        setStats(mockData)
+
+        const data = await response.json()
+        setStats(data)
       } catch (error) {
         console.error('Erro ao buscar estatísticas de empresas:', error)
+        // Manter valores padrão em caso de erro
+        setStats({
+          total: 0,
+          ativas: 0,
+          novasEsteAno: 0,
+          porUF: {}
+        })
       } finally {
         setLoading(false)
       }
@@ -71,8 +68,10 @@ export function EmpresasStats() {
     )
   }
 
-  const percentualAtivas = ((stats.ativas / stats.total) * 100).toFixed(1)
-  const principalUF = Object.entries(stats.porUF).sort(([,a], [,b]) => b - a)[0]
+  const percentualAtivas = stats.total > 0 ? ((stats.ativas / stats.total) * 100).toFixed(1) : '0'
+  const principalUF = stats.porUF && Object.keys(stats.porUF).length > 0
+    ? Object.entries(stats.porUF).sort(([,a], [,b]) => (b as number) - (a as number))[0]
+    : ['--', 0]
 
   return (
     <>

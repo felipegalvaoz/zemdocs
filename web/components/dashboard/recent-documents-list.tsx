@@ -21,68 +21,12 @@ export function RecentDocumentsList() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simular chamada à API
     const fetchRecentDocuments = async () => {
       try {
-        // TODO: Substituir por chamada real à API
-        // const response = await fetch('/api/v1/documents/recent')
-        // const data = await response.json()
+        const response = await fetch('/api/documents/recent')
+        const data = await response.json()
 
-        // Dados simulados
-        const mockData: DocumentItem[] = [
-          {
-            id: "1",
-            document_type: "NFS-e",
-            numero_documento: "240000065",
-            razao_social_emitente: "S. E. L. DE SOUZA SUARES VEICULOS",
-            razao_social_destinatario: "BANCO VOTORANTIM S.A.",
-            valor_nota: 12525.54,
-            data_emissao: "2024-08-22T09:44:48Z",
-            status: "Emitida"
-          },
-          {
-            id: "2",
-            document_type: "NF-e",
-            numero_documento: "240000064",
-            razao_social_emitente: "TECH SOLUTIONS LTDA",
-            razao_social_destinatario: "EMPRESA ABC LTDA",
-            valor_nota: 8750.00,
-            data_emissao: "2024-08-21T14:30:22Z",
-            status: "Emitida"
-          },
-          {
-            id: "3",
-            document_type: "NFS-e",
-            numero_documento: "240000063",
-            razao_social_emitente: "CONSULTORIA XYZ",
-            razao_social_destinatario: "INDUSTRIA DEF S.A.",
-            valor_nota: 15200.75,
-            data_emissao: "2024-08-21T11:15:10Z",
-            status: "Emitida"
-          },
-          {
-            id: "4",
-            document_type: "CT-e",
-            numero_documento: "240000062",
-            razao_social_emitente: "SERVIÇOS GERAIS LTDA",
-            razao_social_destinatario: "COMERCIO GHI LTDA",
-            valor_nota: 3450.00,
-            data_emissao: "2024-08-20T16:45:33Z",
-            status: "Emitida"
-          },
-          {
-            id: "5",
-            document_type: "NFS-e",
-            numero_documento: "240000061",
-            razao_social_emitente: "DESENVOLVIMENTO WEB",
-            razao_social_destinatario: "STARTUP JKL",
-            valor_nota: 22100.00,
-            data_emissao: "2024-08-20T10:20:15Z",
-            status: "Emitida"
-          }
-        ]
-        
-        setDocumentList(mockData)
+        setDocumentList(data.documents || [])
       } catch (error) {
         console.error('Erro ao buscar documentos recentes:', error)
       } finally {

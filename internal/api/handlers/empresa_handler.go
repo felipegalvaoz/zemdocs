@@ -199,3 +199,14 @@ func (h *EmpresaHandler) ExcluirEmpresa(c *gin.Context) {
 		"message": "Empresa excluída com sucesso",
 	})
 }
+
+// EstatisticasEmpresas retorna estatísticas das empresas
+func (h *EmpresaHandler) EstatisticasEmpresas(c *gin.Context) {
+	stats, err := h.empresaService.ObterEstatisticas(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao obter estatísticas"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}

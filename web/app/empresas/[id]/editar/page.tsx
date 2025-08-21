@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/breadcrumb"
 import {
   SidebarInset,
-  SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { SidebarWrapper } from "@/components/sidebar-wrapper"
 import { useEmpresas, type Empresa, type EmpresaUpdateRequest } from "@/hooks/use-empresas"
 
 export default function EditarEmpresaPage() {
@@ -103,7 +103,7 @@ export default function EditarEmpresaPage() {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarWrapper>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -271,6 +271,6 @@ export default function EditarEmpresaPage() {
           </div>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </SidebarWrapper>
   )
 }

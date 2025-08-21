@@ -242,7 +242,9 @@ export default function NovaEmpresaPage() {
                 {/* Dados Básicos */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Dados Básicos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+                  {/* Primeira linha - CNPJ e Inscrições */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="cnpj">CNPJ *</Label>
                       <div className="relative">
@@ -282,7 +284,11 @@ export default function NovaEmpresaPage() {
                         placeholder="123456"
                       />
                     </div>
-                    <div className="md:col-span-2 lg:col-span-3">
+                  </div>
+
+                  {/* Segunda linha - Razão Social e Nome Fantasia */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       <Label htmlFor="razao_social">Razão Social *</Label>
                       <Input
                         id="razao_social"
@@ -291,7 +297,7 @@ export default function NovaEmpresaPage() {
                         placeholder="EMPRESA EXEMPLO LTDA"
                       />
                     </div>
-                    <div className="md:col-span-2 lg:col-span-3">
+                    <div>
                       <Label htmlFor="nome_fantasia">Nome Fantasia</Label>
                       <Input
                         id="nome_fantasia"
@@ -300,6 +306,10 @@ export default function NovaEmpresaPage() {
                         placeholder="EXEMPLO"
                       />
                     </div>
+                  </div>
+
+                  {/* Terceira linha - Data, Porte e Situação */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="data_abertura">Data de Abertura</Label>
                       <Input
@@ -327,7 +337,11 @@ export default function NovaEmpresaPage() {
                         placeholder="Ativa"
                       />
                     </div>
-                    <div className="md:col-span-2 lg:col-span-3">
+                  </div>
+
+                  {/* Quarta linha - Natureza Jurídica */}
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
                       <Label htmlFor="natureza_juridica">Natureza Jurídica</Label>
                       <Input
                         id="natureza_juridica"
@@ -336,7 +350,11 @@ export default function NovaEmpresaPage() {
                         placeholder="Sociedade Empresária Limitada"
                       />
                     </div>
-                    <div className="md:col-span-2 lg:col-span-3">
+                  </div>
+
+                  {/* Quinta linha - Atividade Principal */}
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
                       <Label htmlFor="atividade_principal">Atividade Principal</Label>
                       <Input
                         id="atividade_principal"
@@ -351,8 +369,10 @@ export default function NovaEmpresaPage() {
                 {/* Endereço */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Endereço</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                    <div className="lg:col-span-2">
+
+                  {/* Primeira linha - Logradouro, Número e Complemento */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div className="md:col-span-6">
                       <Label htmlFor="logradouro">Logradouro</Label>
                       <Input
                         id="logradouro"
@@ -361,7 +381,7 @@ export default function NovaEmpresaPage() {
                         placeholder="Rua das Flores"
                       />
                     </div>
-                    <div>
+                    <div className="md:col-span-3">
                       <Label htmlFor="numero">Número</Label>
                       <Input
                         id="numero"
@@ -370,7 +390,7 @@ export default function NovaEmpresaPage() {
                         placeholder="123"
                       />
                     </div>
-                    <div>
+                    <div className="md:col-span-3">
                       <Label htmlFor="complemento">Complemento</Label>
                       <Input
                         id="complemento"
@@ -379,6 +399,10 @@ export default function NovaEmpresaPage() {
                         placeholder="Sala 101"
                       />
                     </div>
+                  </div>
+
+                  {/* Segunda linha - CEP, Bairro */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="cep">CEP</Label>
                       <Input
@@ -397,7 +421,11 @@ export default function NovaEmpresaPage() {
                         placeholder="Centro"
                       />
                     </div>
-                    <div>
+                  </div>
+
+                  {/* Terceira linha - Município e UF */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="md:col-span-3">
                       <Label htmlFor="municipio">Município</Label>
                       <Input
                         id="municipio"
@@ -448,9 +476,11 @@ export default function NovaEmpresaPage() {
                 {/* Dados Adicionais */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Dados Adicionais</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                  {/* Capital Social */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="capital_social">Capital Social</Label>
+                      <Label htmlFor="capital_social">Capital Social (R$)</Label>
                       <Input
                         id="capital_social"
                         type="number"
@@ -460,29 +490,45 @@ export default function NovaEmpresaPage() {
                         placeholder="10000.00"
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="simples_nacional"
-                        checked={formData.simples_nacional}
-                        onCheckedChange={(checked) => updateFormData('simples_nacional', checked)}
-                      />
-                      <Label htmlFor="simples_nacional">Simples Nacional</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="mei"
-                        checked={formData.mei}
-                        onCheckedChange={(checked) => updateFormData('mei', checked)}
-                      />
-                      <Label htmlFor="mei">MEI</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="ativa"
-                        checked={formData.ativa}
-                        onCheckedChange={(checked) => updateFormData('ativa', checked)}
-                      />
-                      <Label htmlFor="ativa">Empresa Ativa</Label>
+                  </div>
+
+                  {/* Configurações */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">Configurações</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Switch
+                          id="simples_nacional"
+                          checked={formData.simples_nacional}
+                          onCheckedChange={(checked) => updateFormData('simples_nacional', checked)}
+                        />
+                        <div className="space-y-1">
+                          <Label htmlFor="simples_nacional" className="text-sm font-medium">Simples Nacional</Label>
+                          <p className="text-xs text-muted-foreground">Regime tributário simplificado</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Switch
+                          id="mei"
+                          checked={formData.mei}
+                          onCheckedChange={(checked) => updateFormData('mei', checked)}
+                        />
+                        <div className="space-y-1">
+                          <Label htmlFor="mei" className="text-sm font-medium">MEI</Label>
+                          <p className="text-xs text-muted-foreground">Microempreendedor Individual</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Switch
+                          id="ativa"
+                          checked={formData.ativa}
+                          onCheckedChange={(checked) => updateFormData('ativa', checked)}
+                        />
+                        <div className="space-y-1">
+                          <Label htmlFor="ativa" className="text-sm font-medium">Empresa Ativa</Label>
+                          <p className="text-xs text-muted-foreground">Status da empresa no sistema</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -29,6 +29,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
   SidebarTrigger,
@@ -194,6 +195,7 @@ export default function NovaEmpresaPage() {
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
@@ -210,7 +212,7 @@ export default function NovaEmpresaPage() {
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Link href="/empresas">
@@ -223,7 +225,7 @@ export default function NovaEmpresaPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 max-w-6xl">
+          <div className="grid gap-6 w-full max-w-none">
 
             {/* Formulário de Cadastro */}
             <Card>
@@ -240,7 +242,7 @@ export default function NovaEmpresaPage() {
                 {/* Dados Básicos */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Dados Básicos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div>
                       <Label htmlFor="cnpj">CNPJ *</Label>
                       <div className="relative">
@@ -349,7 +351,7 @@ export default function NovaEmpresaPage() {
                 {/* Endereço */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Endereço</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                     <div className="lg:col-span-2">
                       <Label htmlFor="logradouro">Logradouro</Label>
                       <Input

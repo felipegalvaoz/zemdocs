@@ -35,8 +35,26 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { SidebarWrapper } from "@/components/sidebar-wrapper"
-import { useEmpresas, type CNPJData, type EmpresaCreateRequest } from "@/hooks/use-empresas"
+import { useEmpresas, type CNPJData, type EmpresaCreateRequest, type TelefoneForm, type EmailForm, type MembroForm, type InscricaoEstadualForm, type SuframaForm } from "@/hooks/use-empresas"
 import { AppSidebar } from "@/components/app-sidebar"
+
+
+
+
+// Componente para evitar erro de hidratação
+function ClientOnlyWrapper({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
+  return <>{children}</>
+}
 
 export default function NovaEmpresaPage() {
   const router = useRouter()
@@ -76,7 +94,15 @@ export default function NovaEmpresaPage() {
     capital_social: 0,
     simples_nacional: false,
     mei: false,
-    ativa: true
+    ativa: true,
+
+    // Listas de dados relacionados
+    atividades_secundarias: [],
+    membros: [],
+    telefones: [],
+    emails: [],
+    inscricoes_estaduais: [],
+    dados_suframa: []
   })
 
   // Auto-search CNPJ when user completes 14 digits
@@ -97,22 +123,31 @@ export default function NovaEmpresaPage() {
       // Auto-populate form with retrieved data
       setFormData(prev => ({
         ...prev,
-        razao_social: data.company?.name || "",
-        nome_fantasia: data.alias || "",
-        data_abertura: data.founded || "",
-        porte: data.company?.size?.text || "",
-        natureza_juridica: data.company?.nature?.text || "",
-        atividade_principal: data.mainActivity?.text || "",
-        situacao_cadastral: data.status?.text || "",
-        logradouro: data.address?.street || "",
-        numero: data.address?.number || "",
-        complemento: data.address?.details || "",
-        cep: data.address?.zip || "",
-        bairro: data.address?.district || "",
-        municipio: data.address?.city || "",
-        uf: data.address?.state || "",
-        email: data.emails?.[0]?.address || "",
-        telefone: data.phones?.[0]?.number || "",
+        razao_social: data.razao_social || "",
+        nome_fantasia: data.nome_fantasia || "",
+        data_abertura: data.data_abertura || "",
+        porte: data.porte || "",
+        natureza_juridica: data.natureza_juridica || "",
+        atividade_principal: data.atividade_principal || "",
+        situacao_cadastral: data.situacao_cadastral || "",
+        logradouro: data.logradouro || "",
+        numero: data.numero || "",
+        complemento: data.complemento || "",
+        cep: data.cep || "",
+        bairro: data.bairro || "",
+        municipio: data.municipio || "",
+        uf: data.uf || "",
+        email: data.email || "",
+        telefone: data.telefone || "",
+        capital_social: data.capital_social || 0,
+        simples_nacional: data.simples_nacional || false,
+        mei: data.mei || false,
+        atividades_secundarias: data.atividades_secundarias || [],
+        membros: data.membros || [],
+        telefones: data.telefones || [],
+        emails: data.emails || [],
+        inscricoes_estaduais: data.inscricoes_estaduais || [],
+        dados_suframa: data.dados_suframa || []
       }))
 
       toast.success("Dados da empresa carregados automaticamente!")
@@ -136,7 +171,7 @@ export default function NovaEmpresaPage() {
   }
 
   // Function to update form data
-  const updateFormData = (field: keyof EmpresaCreateRequest, value: string | boolean | number) => {
+  const updateFormData = (field: keyof EmpresaCreateRequest, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -189,9 +224,10 @@ export default function NovaEmpresaPage() {
 
 
   return (
-    <SidebarWrapper>
-      <AppSidebar />
-      <SidebarInset>
+    <ClientOnlyWrapper>
+      <SidebarWrapper>
+        <AppSidebar />
+        <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
@@ -366,6 +402,45 @@ export default function NovaEmpresaPage() {
                   </div>
                 </div>
 
+                {/* Atividades Secundárias */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Atividades Secundárias</h3>
+                  <div className="space-y-3">
+                    {formData.atividades_secundarias.map((atividade, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={atividade}
+                          onChange={(e) => {
+                            const newAtividades = [...formData.atividades_secundarias]
+                            newAtividades[index] = e.target.value
+                            updateFormData('atividades_secundarias', newAtividades)
+                          }}
+                          placeholder="Descrição da atividade secundária"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newAtividades = formData.atividades_secundarias.filter((_, i) => i !== index)
+                            updateFormData('atividades_secundarias', newAtividades)
+                          }}
+                        >
+                          Remover
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateFormData('atividades_secundarias', [...formData.atividades_secundarias, ""])}
+                    >
+                      Adicionar Atividade Secundária
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Endereço */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Endereço</h3>
@@ -449,10 +524,10 @@ export default function NovaEmpresaPage() {
 
                 {/* Contato */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Contato</h3>
+                  <h3 className="text-lg font-semibold">Contato Principal</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="email">E-mail</Label>
+                      <Label htmlFor="email">E-mail Principal</Label>
                       <Input
                         id="email"
                         type="email"
@@ -462,7 +537,7 @@ export default function NovaEmpresaPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="telefone">Telefone</Label>
+                      <Label htmlFor="telefone">Telefone Principal</Label>
                       <Input
                         id="telefone"
                         value={formData.telefone}
@@ -470,6 +545,387 @@ export default function NovaEmpresaPage() {
                         placeholder="(98) 3234-5678"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Telefones Adicionais */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Telefones Adicionais</h3>
+                  <div className="space-y-3">
+                    {formData.telefones.map((telefone: TelefoneForm, index: number) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <div>
+                          <Label>Tipo</Label>
+                          <Input
+                            value={telefone.tipo || ""}
+                            onChange={(e) => {
+                              const newTelefones = [...formData.telefones]
+                              newTelefones[index] = { ...telefone, tipo: e.target.value }
+                              updateFormData('telefones', newTelefones)
+                            }}
+                            placeholder="Comercial, Celular, etc."
+                          />
+                        </div>
+                        <div>
+                          <Label>DDD</Label>
+                          <Input
+                            value={telefone.ddd || ""}
+                            onChange={(e) => {
+                              const newTelefones = [...formData.telefones]
+                              newTelefones[index] = { ...telefone, ddd: e.target.value }
+                              updateFormData('telefones', newTelefones)
+                            }}
+                            placeholder="11"
+                            maxLength={2}
+                          />
+                        </div>
+                        <div>
+                          <Label>Número</Label>
+                          <Input
+                            value={telefone.numero || ""}
+                            onChange={(e) => {
+                              const newTelefones = [...formData.telefones]
+                              newTelefones[index] = { ...telefone, numero: e.target.value }
+                              updateFormData('telefones', newTelefones)
+                            }}
+                            placeholder="99999-9999"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newTelefones = formData.telefones.filter((_: TelefoneForm, i: number) => i !== index)
+                              updateFormData('telefones', newTelefones)
+                            }}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateFormData('telefones', [...formData.telefones, { tipo: "", ddd: "", numero: "" }])}
+                    >
+                      Adicionar Telefone
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Emails Adicionais */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Emails Adicionais</h3>
+                  <div className="space-y-3">
+                    {formData.emails.map((email: EmailForm, index: number) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            value={email.email || ""}
+                            onChange={(e) => {
+                              const newEmails = [...formData.emails]
+                              newEmails[index] = { ...email, email: e.target.value }
+                              updateFormData('emails', newEmails)
+                            }}
+                            placeholder="email@exemplo.com"
+                          />
+                        </div>
+                        <div>
+                          <Label>Tipo</Label>
+                          <Input
+                            value={email.tipo || ""}
+                            onChange={(e) => {
+                              const newEmails = [...formData.emails]
+                              newEmails[index] = { ...email, tipo: e.target.value }
+                              updateFormData('emails', newEmails)
+                            }}
+                            placeholder="Comercial, Financeiro, etc."
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newEmails = formData.emails.filter((_: EmailForm, i: number) => i !== index)
+                              updateFormData('emails', newEmails)
+                            }}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateFormData('emails', [...formData.emails, { email: "", tipo: "" }])}
+                    >
+                      Adicionar Email
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Membros/Sócios */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Membros/Sócios</h3>
+                  <div className="space-y-4">
+                    {formData.membros.map((membro: MembroForm, index: number) => (
+                      <div key={index} className="p-4 border rounded-lg space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Nome Completo</Label>
+                            <Input
+                              value={membro.nome || ""}
+                              onChange={(e) => {
+                                const newMembros = [...formData.membros]
+                                newMembros[index] = { ...membro, nome: e.target.value }
+                                updateFormData('membros', newMembros)
+                              }}
+                              placeholder="Nome do sócio/administrador"
+                            />
+                          </div>
+                          <div>
+                            <Label>Documento (CPF/CNPJ)</Label>
+                            <Input
+                              value={membro.documento || ""}
+                              onChange={(e) => {
+                                const newMembros = [...formData.membros]
+                                newMembros[index] = { ...membro, documento: e.target.value }
+                                updateFormData('membros', newMembros)
+                              }}
+                              placeholder="000.000.000-00"
+                            />
+                          </div>
+                          <div>
+                            <Label>Cargo/Função</Label>
+                            <Input
+                              value={membro.cargo || ""}
+                              onChange={(e) => {
+                                const newMembros = [...formData.membros]
+                                newMembros[index] = { ...membro, cargo: e.target.value }
+                                updateFormData('membros', newMembros)
+                              }}
+                              placeholder="Administrador, Sócio, etc."
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Data de Início</Label>
+                            <Input
+                              type="date"
+                              value={membro.data_inicio || ""}
+                              onChange={(e) => {
+                                const newMembros = [...formData.membros]
+                                newMembros[index] = { ...membro, data_inicio: e.target.value }
+                                updateFormData('membros', newMembros)
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Idade</Label>
+                            <Input
+                              value={membro.idade || ""}
+                              onChange={(e) => {
+                                const newMembros = [...formData.membros]
+                                newMembros[index] = { ...membro, idade: e.target.value }
+                                updateFormData('membros', newMembros)
+                              }}
+                              placeholder="35 anos"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newMembros = formData.membros.filter((_: MembroForm, i: number) => i !== index)
+                                updateFormData('membros', newMembros)
+                              }}
+                            >
+                              Remover Membro
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateFormData('membros', [...formData.membros, { nome: "", documento: "", cargo: "", data_inicio: "", idade: "" }])}
+                    >
+                      Adicionar Membro/Sócio
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Inscrições Estaduais Adicionais */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Inscrições Estaduais Adicionais</h3>
+                  <div className="space-y-3">
+                    {formData.inscricoes_estaduais.map((inscricao: InscricaoEstadualForm, index: number) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <div>
+                          <Label>Estado (UF)</Label>
+                          <Input
+                            value={inscricao.estado || ""}
+                            onChange={(e) => {
+                              const newInscricoes = [...formData.inscricoes_estaduais]
+                              newInscricoes[index] = { ...inscricao, estado: e.target.value }
+                              updateFormData('inscricoes_estaduais', newInscricoes)
+                            }}
+                            placeholder="SP"
+                            maxLength={2}
+                          />
+                        </div>
+                        <div>
+                          <Label>Número da Inscrição</Label>
+                          <Input
+                            value={inscricao.numero || ""}
+                            onChange={(e) => {
+                              const newInscricoes = [...formData.inscricoes_estaduais]
+                              newInscricoes[index] = { ...inscricao, numero: e.target.value }
+                              updateFormData('inscricoes_estaduais', newInscricoes)
+                            }}
+                            placeholder="123456789"
+                          />
+                        </div>
+                        <div>
+                          <Label>Status</Label>
+                          <Input
+                            value={inscricao.status || ""}
+                            onChange={(e) => {
+                              const newInscricoes = [...formData.inscricoes_estaduais]
+                              newInscricoes[index] = { ...inscricao, status: e.target.value }
+                              updateFormData('inscricoes_estaduais', newInscricoes)
+                            }}
+                            placeholder="Ativa, Suspensa, etc."
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newInscricoes = formData.inscricoes_estaduais.filter((_: InscricaoEstadualForm, i: number) => i !== index)
+                              updateFormData('inscricoes_estaduais', newInscricoes)
+                            }}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateFormData('inscricoes_estaduais', [...formData.inscricoes_estaduais, { estado: "", numero: "", status: "" }])}
+                    >
+                      Adicionar Inscrição Estadual
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Dados SUFRAMA */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Dados SUFRAMA</h3>
+                  <div className="space-y-4">
+                    {formData.dados_suframa.map((suframa: SuframaForm, index: number) => (
+                      <div key={index} className="p-4 border rounded-lg space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Número SUFRAMA</Label>
+                            <Input
+                              value={suframa.numero || ""}
+                              onChange={(e) => {
+                                const newSuframa = [...formData.dados_suframa]
+                                newSuframa[index] = { ...suframa, numero: e.target.value }
+                                updateFormData('dados_suframa', newSuframa)
+                              }}
+                              placeholder="123456789"
+                            />
+                          </div>
+                          <div>
+                            <Label>Data de Cadastro</Label>
+                            <Input
+                              type="date"
+                              value={suframa.data_cadastro || ""}
+                              onChange={(e) => {
+                                const newSuframa = [...formData.dados_suframa]
+                                newSuframa[index] = { ...suframa, data_cadastro: e.target.value }
+                                updateFormData('dados_suframa', newSuframa)
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Data de Vencimento</Label>
+                            <Input
+                              type="date"
+                              value={suframa.data_vencimento || ""}
+                              onChange={(e) => {
+                                const newSuframa = [...formData.dados_suframa]
+                                newSuframa[index] = { ...suframa, data_vencimento: e.target.value }
+                                updateFormData('dados_suframa', newSuframa)
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Tipo de Incentivo</Label>
+                            <Input
+                              value={suframa.tipo_incentivo || ""}
+                              onChange={(e) => {
+                                const newSuframa = [...formData.dados_suframa]
+                                newSuframa[index] = { ...suframa, tipo_incentivo: e.target.value }
+                                updateFormData('dados_suframa', newSuframa)
+                              }}
+                              placeholder="IPI, ICMS, etc."
+                            />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={suframa.ativa || false}
+                              onCheckedChange={(checked) => {
+                                const newSuframa = [...formData.dados_suframa]
+                                newSuframa[index] = { ...suframa, ativa: checked }
+                                updateFormData('dados_suframa', newSuframa)
+                              }}
+                            />
+                            <Label>Registro Ativo</Label>
+                          </div>
+                        </div>
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newSuframa = formData.dados_suframa.filter((_: SuframaForm, i: number) => i !== index)
+                              updateFormData('dados_suframa', newSuframa)
+                            }}
+                          >
+                            Remover SUFRAMA
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateFormData('dados_suframa', [...formData.dados_suframa, { numero: "", data_cadastro: "", data_vencimento: "", tipo_incentivo: "", ativa: true }])}
+                    >
+                      Adicionar Registro SUFRAMA
+                    </Button>
                   </div>
                 </div>
 
@@ -576,5 +1032,6 @@ export default function NovaEmpresaPage() {
         </AlertDialogContent>
       </AlertDialog>
     </SidebarWrapper>
+    </ClientOnlyWrapper>
   )
 }

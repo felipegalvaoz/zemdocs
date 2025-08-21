@@ -21,8 +21,19 @@ export interface Empresa {
     municipio: string
     uf: string
   }
+  // Additional fields from database
+  inscricao_estadual?: string
+  inscricao_municipal?: string
+  natureza_juridica?: string
+  capital_social?: number
+  simples_nacional?: boolean
+  mei?: boolean
+  ativa?: boolean
+  created_at?: string
+  updated_at?: string
 }
 
+// Interface para dados completos do formulário (corresponde ao backend CNPJAFormResponse)
 export interface EmpresaCreateRequest {
   // Dados básicos
   cnpj: string
@@ -54,6 +65,48 @@ export interface EmpresaCreateRequest {
   simples_nacional: boolean
   mei: boolean
   ativa: boolean
+
+  // Listas de dados relacionados
+  atividades_secundarias: string[]
+  membros: MembroForm[]
+  telefones: TelefoneForm[]
+  emails: EmailForm[]
+  inscricoes_estaduais: InscricaoEstadualForm[]
+  dados_suframa: SuframaForm[]
+}
+
+// Interfaces para dados relacionados
+export interface MembroForm {
+  nome: string
+  documento: string
+  cargo: string
+  data_inicio: string
+  idade: string
+}
+
+export interface TelefoneForm {
+  tipo: string
+  ddd: string
+  numero: string
+}
+
+export interface EmailForm {
+  email: string
+  tipo: string
+}
+
+export interface InscricaoEstadualForm {
+  estado: string
+  numero: string
+  status: string
+}
+
+export interface SuframaForm {
+  numero: string
+  data_cadastro: string
+  data_vencimento: string
+  tipo_incentivo: string
+  ativa: boolean
 }
 
 export interface EmpresaUpdateRequest {
@@ -64,99 +117,46 @@ export interface EmpresaUpdateRequest {
   ativa: boolean
 }
 
+// Interface para resposta da consulta CNPJ (corresponde ao CNPJAFormResponse do backend)
 export interface CNPJData {
-  updated: string
-  taxId: string
-  alias: string
-  founded: string
-  head: boolean
-  company: {
-    id: number
-    name: string
-    equity: number
-    size: {
-      id: number
-      acronym: string
-      text: string
-    }
-    nature: {
-      id: number
-      text: string
-    }
-    simples: {
-      optant: boolean
-      since: string
-    }
-    simei: {
-      optant: boolean
-      since: string
-    }
-    members: Array<{
-      since: string
-      person: {
-        id: string
-        type: string
-        name: string
-        taxId: string
-        age: string
-      }
-      role: {
-        id: number
-        text: string
-      }
-    }>
-  }
-  statusDate: string
-  status: {
-    id: number
-    text: string
-  }
-  address: {
-    municipality: number
-    street: string
-    number: string
-    district: string
-    city: string
-    state: string
-    details: string
-    zip: string
-    country: {
-      id: number
-      name: string
-    }
-  }
-  mainActivity: {
-    id: number
-    text: string
-  }
-  phones: Array<{
-    type: string
-    area: string
-    number: string
-  }>
-  emails: Array<{
-    ownership: string
-    address: string
-    domain: string
-  }>
-  sideActivities: Array<{
-    id: number
-    text: string
-  }>
-  registrations: Array<{
-    number: string
-    state: string
-    enabled: boolean
-    statusDate: string
-    status: {
-      id: number
-      text: string
-    }
-    type: {
-      id: number
-      text: string
-    }
-  }>
+  // Dados básicos da empresa
+  cnpj: string
+  inscricao_estadual: string
+  inscricao_municipal: string
+  razao_social: string
+  nome_fantasia: string
+  data_abertura: string
+  porte: string
+  natureza_juridica: string
+  atividade_principal: string
+  situacao_cadastral: string
+
+  // Endereço
+  logradouro: string
+  numero: string
+  complemento: string
+  cep: string
+  bairro: string
+  municipio: string
+  uf: string
+
+  // Contato principal
+  email: string
+  telefone: string
+
+  // Dados adicionais
+  capital_social: number
+  simples_nacional: boolean
+  mei: boolean
+  ativa: boolean
+
+  // Listas de dados relacionados
+  atividades_secundarias: string[]
+  membros: MembroForm[]
+  telefones: TelefoneForm[]
+  emails: EmailForm[]
+  inscricoes_estaduais: InscricaoEstadualForm[]
+  dados_suframa: SuframaForm[]
 }
 
 export function useEmpresas() {
@@ -243,7 +243,7 @@ export function useEmpresas() {
       // Limpar CNPJ (remover pontos, barras e hífens)
       const cnpjLimpo = cnpj.replace(/\D/g, '')
 
-      const response = await fetch(`/api/empresas/consultar-cnpj/${cnpjLimpo}`)
+      const response = await fetch(`http://localhost:8080/api/v1/empresas/cnpj-api/${cnpjLimpo}`)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Erro ao consultar CNPJ')
@@ -260,11 +260,11 @@ export function useEmpresas() {
     }
   }, [])
 
-  // Criar empresa
+  // Criar empresa com dados completos
   const criarEmpresa = useCallback(async (empresa: EmpresaCreateRequest): Promise<Empresa> => {
     setLoading(true)
     try {
-      const response = await fetch('/api/empresas', {
+      const response = await fetch('http://localhost:8080/api/v1/empresas/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -279,7 +279,8 @@ export function useEmpresas() {
         // Verificar se é erro de CNPJ duplicado
         if (errorMessage.includes('duplicate key value violates unique constraint') ||
             errorMessage.includes('empresas_cnpj_key') ||
-            errorMessage.includes('já existe')) {
+            errorMessage.includes('já existe') ||
+            errorMessage.includes('já cadastrada')) {
           errorMessage = `⚠️ Empresa já cadastrada!\n\nUma empresa com este CNPJ já está registrada no sistema. Verifique a listagem de empresas ou use um CNPJ diferente.`
         }
 
@@ -296,6 +297,8 @@ export function useEmpresas() {
     }
   }, [])
 
+
+
   // Criar empresa por CNPJ
   const criarEmpresaPorCnpj = useCallback(async (cnpj: string): Promise<Empresa> => {
     setLoading(true)
@@ -303,7 +306,7 @@ export function useEmpresas() {
       // Limpar CNPJ (remover pontos, barras e hífens)
       const cnpjLimpo = cnpj.replace(/\D/g, '')
 
-      const response = await fetch(`/api/empresas/criar-por-cnpj/${cnpjLimpo}`, {
+      const response = await fetch(`http://localhost:8080/api/v1/empresas/cnpj-api/${cnpjLimpo}`, {
         method: 'POST',
       })
 

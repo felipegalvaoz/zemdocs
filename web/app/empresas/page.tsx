@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { SidebarWrapper } from "@/components/sidebar-wrapper"
 
-import { EmpresasAdvancedTable } from "@/components/empresas"
-import { EmpresasStats } from "@/components/empresas/empresas-stats"
+import EmpresasOriginTable from "@/components/empresas/empresas-origin-table"
 
 export default function EmpresasPage() {
   return (
@@ -43,18 +42,7 @@ export default function EmpresasPage() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Empresas</h2>
-            <p className="text-muted-foreground">
-              Gerencie as empresas cadastradas no sistema
-            </p>
-          </div>
-          <div className="grid auto-rows-min gap-4 md:grid-cols-4">
-            <EmpresasStats />
-          </div>
-          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
-            <EmpresasAdvancedTable />
-          </div>
+          <EmpresasOriginTable />
         </div>
       </SidebarInset>
     </SidebarWrapper>

@@ -3,7 +3,6 @@ package sao_luis
 import (
 	"context"
 	"fmt"
-	"zemdocs/internal/clientes/nfse"
 )
 
 // Client implementa nfse.Client para São Luís-MA
@@ -20,6 +19,10 @@ func NewClient(baseURL, token string) *Client {
 	}
 }
 
+// TODO: Implementar integração com API de São Luís
+// As funções abaixo serão implementadas quando o pacote nfse for criado
+
+/*
 // ConsultarNFSe implementa nfse.Client
 func (c *Client) ConsultarNFSe(ctx context.Context, req nfse.ConsultarRequest) (*nfse.Response, error) {
 	// TODO: Implementar integração com API de São Luís
@@ -31,6 +34,7 @@ func (c *Client) ConsultarXMLNFSe(ctx context.Context, req nfse.ConsultarXMLRequ
 	// TODO: Implementar integração com API de São Luís
 	return nil, fmt.Errorf("integração com São Luís não implementada")
 }
+*/
 
 // UltimoRPSEnviado implementa nfse.Client
 func (c *Client) UltimoRPSEnviado(ctx context.Context) (string, error) {

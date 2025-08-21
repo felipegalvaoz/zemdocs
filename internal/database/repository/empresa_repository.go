@@ -64,7 +64,7 @@ func (r *EmpresaRepository) Search(ctx context.Context, termo string, limit, off
 	var empresas []*model.Empresa
 	err := r.db.NewSelect().
 		Model(&empresas).
-		Where("cnpj ILIKE ? OR razao_social ILIKE ? OR nome_fantasia ILIKE ?", 
+		Where("cnpj ILIKE ? OR razao_social ILIKE ? OR nome_fantasia ILIKE ?",
 			"%"+termo+"%", "%"+termo+"%", "%"+termo+"%").
 		Order("razao_social ASC").
 		Limit(limit).
@@ -153,8 +153,38 @@ func (r *EmpresaRepository) Count(ctx context.Context) (int, error) {
 func (r *EmpresaRepository) CountBySearch(ctx context.Context, termo string) (int, error) {
 	count, err := r.db.NewSelect().
 		Model((*model.Empresa)(nil)).
-		Where("cnpj ILIKE ? OR razao_social ILIKE ? OR nome_fantasia ILIKE ?", 
+		Where("cnpj ILIKE ? OR razao_social ILIKE ? OR nome_fantasia ILIKE ?",
 			"%"+termo+"%", "%"+termo+"%", "%"+termo+"%").
 		Count(ctx)
 	return count, err
+}
+
+// CreateMembro cria um novo membro da empresa
+func (r *EmpresaRepository) CreateMembro(ctx context.Context, membro *model.EmpresaMembro) error {
+	_, err := r.db.NewInsert().Model(membro).Exec(ctx)
+	return err
+}
+
+// CreateInscricaoEstadual cria uma nova inscrição estadual
+func (r *EmpresaRepository) CreateInscricaoEstadual(ctx context.Context, inscricao *model.EmpresaInscricaoEstadual) error {
+	_, err := r.db.NewInsert().Model(inscricao).Exec(ctx)
+	return err
+}
+
+// CreateSuframa cria um novo registro SUFRAMA
+func (r *EmpresaRepository) CreateSuframa(ctx context.Context, suframa *model.EmpresaSuframa) error {
+	_, err := r.db.NewInsert().Model(suframa).Exec(ctx)
+	return err
+}
+
+// CreateTelefone cria um novo telefone da empresa
+func (r *EmpresaRepository) CreateTelefone(ctx context.Context, telefone *model.EmpresaTelefone) error {
+	_, err := r.db.NewInsert().Model(telefone).Exec(ctx)
+	return err
+}
+
+// CreateEmail cria um novo email da empresa
+func (r *EmpresaRepository) CreateEmail(ctx context.Context, email *model.EmpresaEmail) error {
+	_, err := r.db.NewInsert().Model(email).Exec(ctx)
+	return err
 }

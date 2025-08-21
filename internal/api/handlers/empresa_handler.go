@@ -60,6 +60,36 @@ func (h *EmpresaHandler) CriarEmpresaPorCNPJ(c *gin.Context) {
 	c.JSON(http.StatusCreated, empresa)
 }
 
+// CriarEmpresaCompleta cria uma empresa com todos os dados do formulário
+func (h *EmpresaHandler) CriarEmpresaCompleta(c *gin.Context) {
+	var formData model.CNPJAFormResponse
+	if err := c.ShouldBindJSON(&formData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
+		return
+	}
+
+	// Validar CNPJ obrigatório
+	if formData.CNPJ == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "CNPJ é obrigatório"})
+		return
+	}
+
+	// Validar razão social obrigatória
+	if formData.RazaoSocial == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Razão Social é obrigatória"})
+		return
+	}
+
+	// Criar empresa
+	empresa, err := h.empresaService.CriarEmpresaCompleta(c.Request.Context(), &formData)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, empresa)
+}
+
 // ListarEmpresas lista todas as empresas com paginação
 func (h *EmpresaHandler) ListarEmpresas(c *gin.Context) {
 	// Parâmetros de paginação
@@ -98,24 +128,6 @@ func (h *EmpresaHandler) ListarEmpresas(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
-}
-
-// CriarEmpresa cria uma empresa com dados fornecidos
-func (h *EmpresaHandler) CriarEmpresa(c *gin.Context) {
-	var req model.EmpresaCreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos"})
-		return
-	}
-
-	// Criar empresa
-	empresa, err := h.empresaService.CriarEmpresa(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, empresa)
 }
 
 // ConsultarEmpresaPorID consulta uma empresa por ID

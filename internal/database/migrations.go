@@ -16,6 +16,11 @@ func RunMigrations(ctx context.Context) error {
 		(*model.User)(nil),
 		(*model.Empresa)(nil),
 		(*model.AtividadeSecundaria)(nil),
+		(*model.EmpresaMembro)(nil),
+		(*model.EmpresaInscricaoEstadual)(nil),
+		(*model.EmpresaSuframa)(nil),
+		(*model.EmpresaTelefone)(nil),
+		(*model.EmpresaEmail)(nil),
 	}
 
 	// Criar tabelas se não existirem
@@ -61,6 +66,29 @@ func createIndexes(ctx context.Context) error {
 		// Índices para AtividadeSecundaria
 		"CREATE INDEX IF NOT EXISTS idx_atividade_empresa_id ON atividades_secundarias (empresa_id)",
 		"CREATE INDEX IF NOT EXISTS idx_atividade_codigo ON atividades_secundarias (codigo)",
+
+		// Índices para EmpresaMembro
+		"CREATE INDEX IF NOT EXISTS idx_empresa_membro_empresa_id ON empresa_membros (empresa_id)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_membro_documento ON empresa_membros (numero_documento)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_membro_nome ON empresa_membros (nome)",
+
+		// Índices para EmpresaInscricaoEstadual
+		"CREATE INDEX IF NOT EXISTS idx_empresa_inscricao_empresa_id ON empresa_inscricoes_estaduais (empresa_id)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_inscricao_numero ON empresa_inscricoes_estaduais (numero)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_inscricao_estado ON empresa_inscricoes_estaduais (estado)",
+
+		// Índices para EmpresaSuframa
+		"CREATE INDEX IF NOT EXISTS idx_empresa_suframa_empresa_id ON empresa_suframa (empresa_id)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_suframa_numero ON empresa_suframa (numero)",
+
+		// Índices para EmpresaTelefone
+		"CREATE INDEX IF NOT EXISTS idx_empresa_telefone_empresa_id ON empresa_telefones (empresa_id)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_telefone_principal ON empresa_telefones (principal)",
+
+		// Índices para EmpresaEmail
+		"CREATE INDEX IF NOT EXISTS idx_empresa_email_empresa_id ON empresa_emails (empresa_id)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_email_principal ON empresa_emails (principal)",
+		"CREATE INDEX IF NOT EXISTS idx_empresa_email_email ON empresa_emails (email)",
 	}
 
 	for _, indexSQL := range indexes {

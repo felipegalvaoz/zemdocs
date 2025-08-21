@@ -163,6 +163,143 @@ func (s *CNPJAService) ConvertAtividadesSecundarias(cnpjaResp *model.CNPJARespon
 	return atividades
 }
 
+// ConvertMembros converte os membros/sócios da empresa
+func (s *CNPJAService) ConvertMembros(cnpjaResp *model.CNPJAResponse, empresaID int) []model.EmpresaMembro {
+	var membros []model.EmpresaMembro
+
+	for _, membro := range cnpjaResp.Company.Members {
+		empresaMembro := model.EmpresaMembro{
+			EmpresaID:       empresaID,
+			TipoDocumento:   membro.Person.Type,
+			NumeroDocumento: membro.Person.TaxID,
+			Nome:            membro.Person.Name,
+			Idade:           membro.Person.Age,
+			CargoID:         membro.Role.ID,
+			CargoNome:       membro.Role.Text,
+		}
+
+		// Converter data de início se disponível
+		if membro.Since != "" {
+			if dataInicio, err := time.Parse("2006-01-02", membro.Since); err == nil {
+				empresaMembro.DataInicio = dataInicio
+			}
+		}
+
+		membros = append(membros, empresaMembro)
+	}
+
+	return membros
+}
+
+// ConvertInscricoesEstaduais converte as inscrições estaduais
+func (s *CNPJAService) ConvertInscricoesEstaduais(cnpjaResp *model.CNPJAResponse, empresaID int) []model.EmpresaInscricaoEstadual {
+	var inscricoes []model.EmpresaInscricaoEstadual
+
+	for _, registro := range cnpjaResp.Registrations {
+		inscricao := model.EmpresaInscricaoEstadual{
+			EmpresaID:  empresaID,
+			Numero:     registro.Number,
+			Estado:     registro.State,
+			Ativa:      registro.Enabled,
+			StatusID:   registro.Status.ID,
+			StatusNome: registro.Status.Text,
+			TipoID:     registro.Type.ID,
+			TipoNome:   registro.Type.Text,
+		}
+
+		// Converter data do status se disponível
+		if registro.StatusDate != "" {
+			if dataStatus, err := time.Parse("2006-01-02", registro.StatusDate); err == nil {
+				inscricao.DataStatus = dataStatus
+			}
+		}
+
+		inscricoes = append(inscricoes, inscricao)
+	}
+
+	return inscricoes
+}
+
+// ConvertTelefones converte os telefones da empresa
+func (s *CNPJAService) ConvertTelefones(cnpjaResp *model.CNPJAResponse, empresaID int) []model.EmpresaTelefone {
+	var telefones []model.EmpresaTelefone
+
+	for i, telefone := range cnpjaResp.Phones {
+		empresaTelefone := model.EmpresaTelefone{
+			EmpresaID: empresaID,
+			Tipo:      telefone.Type,
+			DDD:       telefone.Area,
+			Numero:    telefone.Number,
+			Principal: i == 0, // Primeiro telefone é considerado principal
+		}
+
+		telefones = append(telefones, empresaTelefone)
+	}
+
+	return telefones
+}
+
+// ConvertEmails converte os emails da empresa
+func (s *CNPJAService) ConvertEmails(cnpjaResp *model.CNPJAResponse, empresaID int) []model.EmpresaEmail {
+	var emails []model.EmpresaEmail
+
+	for i, email := range cnpjaResp.Emails {
+		empresaEmail := model.EmpresaEmail{
+			EmpresaID: empresaID,
+			Email:     email.Address,
+			Dominio:   email.Domain,
+			Tipo:      email.Ownership,
+			Principal: i == 0, // Primeiro email é considerado principal
+		}
+
+		emails = append(emails, empresaEmail)
+	}
+
+	return emails
+}
+
+// ConvertSuframa converte os dados SUFRAMA (se disponíveis)
+func (s *CNPJAService) ConvertSuframa(cnpjaResp *model.CNPJAResponse, empresaID int) []model.EmpresaSuframa {
+	var suframas []model.EmpresaSuframa
+
+	for _, suframa := range cnpjaResp.Suframa {
+		empresaSuframa := model.EmpresaSuframa{
+			EmpresaID:        empresaID,
+			Numero:           suframa.Number,
+			Ativa:            suframa.Approved,
+			IncentivosAtivos: len(suframa.Incentives) > 0,
+		}
+
+		// Converter data de cadastro se disponível
+		if suframa.Since != "" {
+			if dataCadastro, err := time.Parse("2006-01-02", suframa.Since); err == nil {
+				empresaSuframa.DataCadastro = dataCadastro
+			}
+		}
+
+		// Converter data de aprovação se disponível
+		if suframa.ApprovalDate != "" {
+			if dataVencimento, err := time.Parse("2006-01-02", suframa.ApprovalDate); err == nil {
+				empresaSuframa.DataVencimento = dataVencimento
+			}
+		}
+
+		// Processar incentivos se houver
+		if len(suframa.Incentives) > 0 {
+			var incentivos []string
+			for _, incentivo := range suframa.Incentives {
+				incentivos = append(incentivos, fmt.Sprintf("%s: %s", incentivo.Tribute, incentivo.Benefit))
+			}
+			empresaSuframa.TipoIncentivo = suframa.Incentives[0].Tribute
+			empresaSuframa.DescricaoIncentivo = fmt.Sprintf("Benefícios: %s", strings.Join(incentivos, "; "))
+		}
+
+		suframas = append(suframas, empresaSuframa)
+	}
+
+	return suframas
+}
+
 // ValidarCNPJ valida se o CNPJ tem formato válido
 func (s *CNPJAService) ValidarCNPJ(cnpj string) bool {
 	// Limpar CNPJ

@@ -3,7 +3,6 @@ package sao_paulo
 import (
 	"context"
 	"fmt"
-	"zemdocs/internal/clientes/nfse"
 )
 
 // Client implementa nfse.Client para São Paulo-SP
@@ -20,6 +19,10 @@ func NewClient(baseURL, token string) *Client {
 	}
 }
 
+// TODO: Implementar integração com API de São Paulo
+// As funções abaixo serão implementadas quando o pacote nfse for criado
+
+/*
 // ConsultarNFSe implementa nfse.Client
 func (c *Client) ConsultarNFSe(ctx context.Context, req nfse.ConsultarRequest) (*nfse.Response, error) {
 	// TODO: Implementar integração com API de São Paulo
@@ -31,6 +34,7 @@ func (c *Client) ConsultarXMLNFSe(ctx context.Context, req nfse.ConsultarXMLRequ
 	// TODO: Implementar integração com API de São Paulo
 	return nil, fmt.Errorf("integração com São Paulo não implementada")
 }
+*/
 
 // UltimoRPSEnviado implementa nfse.Client
 func (c *Client) UltimoRPSEnviado(ctx context.Context) (string, error) {

@@ -10,9 +10,7 @@ const nextConfig: NextConfig = {
     ];
   },
   // Configuração adicional para evitar loops
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+  serverExternalPackages: [],
 };
 
 export default nextConfig;

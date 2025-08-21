@@ -289,18 +289,7 @@ export function useEmpresas() {
       const data = await response.json()
       return data
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao criar empresa'
-
-      // Para erros de duplicata, não mostrar toast aqui (será tratado pelo AlertDialog)
-      if (!errorMessage.includes('já cadastrada') &&
-          !errorMessage.includes('já está registrada') &&
-          !errorMessage.includes('já existe') &&
-          !errorMessage.includes('duplicate key')) {
-        toast.error(errorMessage, {
-          duration: 4000,
-        })
-      }
-
+      // Não mostrar toast aqui, será tratado na página
       throw error
     } finally {
       setLoading(false)
@@ -326,7 +315,7 @@ export function useEmpresas() {
         if (errorMessage.includes('duplicate key value violates unique constraint') ||
             errorMessage.includes('empresas_cnpj_key') ||
             errorMessage.includes('já existe')) {
-          errorMessage = `🔍 Empresa já encontrada!\n\nEsta empresa já está cadastrada no sistema. Você pode encontrá-la na listagem de empresas.`
+          errorMessage = `⚠️ Empresa já cadastrada!\n\nUma empresa com este CNPJ já está registrada no sistema. Verifique a listagem de empresas ou use um CNPJ diferente.`
         }
 
         throw new Error(errorMessage)
@@ -335,18 +324,7 @@ export function useEmpresas() {
       const data = await response.json()
       return data
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao criar empresa'
-
-      // Para erros de duplicata, não mostrar toast aqui (será tratado pelo AlertDialog)
-      if (!errorMessage.includes('já encontrada') &&
-          !errorMessage.includes('já está cadastrada') &&
-          !errorMessage.includes('já existe') &&
-          !errorMessage.includes('duplicate key')) {
-        toast.error(errorMessage, {
-          duration: 4000,
-        })
-      }
-
+      // Não mostrar toast aqui, será tratado na página
       throw error
     } finally {
       setLoading(false)

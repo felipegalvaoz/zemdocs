@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useMemo, useRef, useState, useEffect } from "react"
+import { useId, useMemo, useRef, useState, useEffect, useCallback } from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -32,7 +32,6 @@ import {
   Eye,
   Edit,
   Search,
-  CalendarIcon,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -196,7 +195,7 @@ const formatCurrency = (value?: number) => {
 
 
 // Definição das colunas da tabela
-const columns: ColumnDef<Empresa>[] = [
+const createColumns = (refreshEmpresas: () => Promise<void>): ColumnDef<Empresa>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -278,7 +277,7 @@ const columns: ColumnDef<Empresa>[] = [
     accessorKey: "municipio",
     cell: ({ row }) => (
       <div className="text-sm min-w-0 truncate">
-        {row.getValue("municipio")}/{row.original.uf}
+        {row.getValue("municipio")}/{row.original.endereco?.uf || 'N/A'}
       </div>
     ),
     size: 160,
@@ -313,7 +312,7 @@ const columns: ColumnDef<Empresa>[] = [
   {
     id: "actions",
     header: "Ações",
-    cell: ({ row }) => <RowActions row={row} />,
+    cell: ({ row }) => <RowActions row={row} refreshEmpresas={refreshEmpresas} />,
     size: 80,
     enableSorting: false,
     enableHiding: false,
@@ -365,6 +364,18 @@ export default function EmpresasAdvancedTable() {
       setData(empresas)
     }
   }, [empresas])
+
+  // Função para recarregar a lista de empresas
+  const refreshEmpresas = useCallback(async () => {
+    try {
+      await listarEmpresas({ limit: 100, offset: 0 })
+    } catch (error) {
+      console.error('Erro ao recarregar empresas:', error)
+    }
+  }, [listarEmpresas])
+
+  // Criar colunas com a função de refresh
+  const columns = useMemo(() => createColumns(refreshEmpresas), [refreshEmpresas])
 
   // Aplicar filtros personalizados aos dados
   const filteredData = useMemo(() => {
@@ -633,6 +644,12 @@ export default function EmpresasAdvancedTable() {
 
             {/* Botões de ação */}
             <div className="flex items-center gap-2">
+              <Link href="/empresas/nova">
+                <Button size="sm" className="gap-2">
+                  <PlusIcon className="h-4 w-4" />
+                  Nova Empresa
+                </Button>
+              </Link>
               {selectedRowsCount > 0 && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -671,13 +688,6 @@ export default function EmpresasAdvancedTable() {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-
-              <Link href="/empresas/nova">
-                <Button variant="outline" size="sm">
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Nova Empresa
-                </Button>
-              </Link>
             </div>
           </div>
 
@@ -1172,7 +1182,25 @@ export default function EmpresasAdvancedTable() {
 }
 
 // Componente para ações da linha
-function RowActions({ row: _row }: { row: any }) {
+function RowActions({ row: _row, refreshEmpresas }: { row: any; refreshEmpresas: () => Promise<void> }) {
+  const { excluirEmpresa } = useEmpresas()
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true)
+      await excluirEmpresa(_row.original.id)
+      // O toast de sucesso já é exibido pelo hook useEmpresas
+      // Recarregar a lista de empresas
+      await refreshEmpresas()
+    } catch (error) {
+      console.error('Erro ao excluir empresa:', error)
+      // O toast de erro já é exibido pelo hook useEmpresas
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -1226,11 +1254,37 @@ function RowActions({ row: _row }: { row: any }) {
           <DropdownMenuItem>Adicionar aos favoritos</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive focus:text-destructive">
-          <TrashIcon className="mr-2 h-4 w-4" />
-          <span>Excluir</span>
-          <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-        </DropdownMenuItem>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <TrashIcon className="mr-2 h-4 w-4" />
+              <span>Excluir</span>
+              <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir a empresa "{_row.original.nome_fantasia || _row.original.razao_social}"?
+                Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DropdownMenuContent>
     </DropdownMenu>
   )

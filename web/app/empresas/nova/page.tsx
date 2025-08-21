@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { ArrowLeft, Building2, Search, Loader2, Save } from "lucide-react"
+import { ArrowLeft, Building2, Loader2, Save } from "lucide-react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -39,9 +39,9 @@ import { AppSidebar } from "@/components/app-sidebar"
 
 export default function NovaEmpresaPage() {
   const router = useRouter()
-  const { consultarCnpj, criarEmpresa, criarEmpresaPorCnpj, loading } = useEmpresas()
-  
-  const [cnpj, setCnpj] = useState("")
+  const { consultarCnpj, criarEmpresa, loading } = useEmpresas()
+
+  const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
   const [cnpjData, setCnpjData] = useState<CNPJData | null>(null)
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [duplicateError, setDuplicateError] = useState("")
@@ -78,6 +78,53 @@ export default function NovaEmpresaPage() {
     ativa: true
   })
 
+  // Auto-search CNPJ when user completes 14 digits
+  useEffect(() => {
+    const cnpjDigits = formData.cnpj.replace(/\D/g, "")
+    if (cnpjDigits.length === 14 && !isLoadingCnpj) {
+      handleAutoSearchCNPJ(cnpjDigits)
+    }
+  }, [formData.cnpj])
+
+  // Function to auto-search CNPJ data
+  const handleAutoSearchCNPJ = async (cnpjDigits: string) => {
+    setIsLoadingCnpj(true)
+    try {
+      const data = await consultarCnpj(cnpjDigits)
+      setCnpjData(data)
+
+      // Auto-populate form with retrieved data
+      setFormData(prev => ({
+        ...prev,
+        razao_social: data.company?.name || "",
+        nome_fantasia: data.alias || "",
+        data_abertura: data.founded || "",
+        porte: data.company?.size?.text || "",
+        natureza_juridica: data.company?.nature?.text || "",
+        atividade_principal: data.mainActivity?.text || "",
+        situacao_cadastral: data.status?.text || "",
+        logradouro: data.address?.street || "",
+        numero: data.address?.number || "",
+        complemento: data.address?.details || "",
+        cep: data.address?.zip || "",
+        bairro: data.address?.district || "",
+        municipio: data.address?.city || "",
+        uf: data.address?.state || "",
+        email: data.emails?.[0]?.address || "",
+        telefone: data.phones?.[0]?.number || "",
+      }))
+
+      toast.success("Dados da empresa carregados automaticamente!")
+    } catch (error) {
+      // Only show error if it's not a "not found" error
+      if (error instanceof Error && !error.message.includes('não encontrada')) {
+        toast.error("Erro ao consultar CNPJ. Você pode preencher os dados manualmente.")
+      }
+    } finally {
+      setIsLoadingCnpj(false)
+    }
+  }
+
   // Função para formatar CNPJ
   const formatCNPJ = (value: string) => {
     const numbers = value.replace(/\D/g, "")
@@ -87,59 +134,7 @@ export default function NovaEmpresaPage() {
     return value
   }
 
-  // Função para consultar CNPJ e preencher formulário
-  const handleConsultarCNPJ = async () => {
-    if (!cnpj || cnpj.replace(/\D/g, "").length !== 14) {
-      toast.error("Digite um CNPJ válido com 14 dígitos")
-      return
-    }
-
-    try {
-      const data = await consultarCnpj(cnpj)
-      setCnpjData(data)
-
-      // Mapear dados da API para o formulário
-      const novoFormData: EmpresaCreateRequest = {
-        // Dados básicos
-        cnpj: data.taxId || cnpj,
-        inscricao_estadual: "",
-        inscricao_municipal: "",
-        razao_social: data.company?.name || "",
-        nome_fantasia: data.alias || "",
-        data_abertura: data.founded || "",
-        porte: data.company?.size?.text || "",
-        natureza_juridica: data.company?.nature?.text || "",
-        atividade_principal: data.mainActivity?.text || "",
-        situacao_cadastral: data.status?.text || "",
-
-        // Endereço
-        logradouro: data.address?.street || "",
-        numero: data.address?.number || "",
-        complemento: data.address?.details || "",
-        cep: data.address?.zip || "",
-        bairro: data.address?.district || "",
-        municipio: data.address?.city || "",
-        uf: data.address?.state || "",
-
-        // Contato
-        email: data.emails?.[0]?.address || "",
-        telefone: data.phones?.[0] ? `(${data.phones[0].area}) ${data.phones[0].number}` : "",
-
-        // Dados adicionais
-        capital_social: data.company?.equity || 0,
-        simples_nacional: data.company?.simples?.optant || false,
-        mei: data.company?.simei?.optant || false,
-        ativa: data.status?.id === 2 // 2 = Ativa na API CNPJA
-      }
-
-      setFormData(novoFormData)
-      toast.success("CNPJ consultado! Dados preenchidos automaticamente.")
-    } catch (error) {
-      console.error("Erro ao consultar CNPJ:", error)
-    }
-  }
-
-  // Função para atualizar campos do formulário
+  // Function to update form data
   const updateFormData = (field: keyof EmpresaCreateRequest, value: string | boolean | number) => {
     setFormData(prev => ({
       ...prev,
@@ -147,7 +142,7 @@ export default function NovaEmpresaPage() {
     }))
   }
 
-  // Função para salvar empresa
+  // Function to save company
   const handleSalvarEmpresa = async () => {
     // Validações básicas
     if (!formData.cnpj || formData.cnpj.replace(/\D/g, "").length !== 14) {
@@ -165,49 +160,32 @@ export default function NovaEmpresaPage() {
       toast.success("Empresa criada com sucesso!")
       router.push("/empresas")
     } catch (error) {
-      console.log("Erro capturado:", error)
-      console.log("Mensagem do erro:", error instanceof Error ? error.message : "Não é Error")
+      // Check if it's a duplicate CNPJ error
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const isDuplicateError =
+        errorMessage.includes('já existe') ||
+        errorMessage.includes('já está cadastrada') ||
+        errorMessage.includes('já cadastrada') ||
+        errorMessage.includes('duplicate key') ||
+        errorMessage.includes('unique constraint') ||
+        errorMessage.includes('UNIQUE constraint failed') ||
+        (error as any)?.status === 400 ||
+        (error as any)?.response?.status === 400
 
-      // Verificar se é erro de empresa duplicada
-      if (error instanceof Error &&
-          (error.message.includes('já existe') ||
-           error.message.includes('já está cadastrada') ||
-           error.message.includes('duplicate key'))) {
-        console.log("Detectado erro de duplicata, abrindo dialog")
-        setDuplicateError(`A empresa com CNPJ ${formData.cnpj} já está cadastrada no sistema.`)
+      if (isDuplicateError) {
+        setDuplicateError(`Uma empresa com o CNPJ ${formData.cnpj} já está registrada no sistema.`)
         setShowDuplicateDialog(true)
+      } else {
+        // Show generic error for other cases
+        toast.error("Erro ao criar empresa", {
+          description: errorMessage || "Ocorreu um erro inesperado. Tente novamente.",
+          duration: 5000,
+        })
       }
-      // Outros erros já são tratados pelo hook useEmpresas
     }
   }
 
-  // Função para criar empresa diretamente por CNPJ
-  const handleCriarPorCNPJ = async () => {
-    if (!cnpj || cnpj.replace(/\D/g, "").length !== 14) {
-      toast.error("Digite um CNPJ válido com 14 dígitos")
-      return
-    }
 
-    try {
-      const empresa = await criarEmpresaPorCnpj(cnpj)
-      toast.success(`Empresa ${empresa.razao_social} criada com sucesso!`)
-      router.push("/empresas")
-    } catch (error) {
-      console.log("Erro capturado (criar por CNPJ):", error)
-      console.log("Mensagem do erro:", error instanceof Error ? error.message : "Não é Error")
-
-      // Verificar se é erro de empresa duplicada
-      if (error instanceof Error &&
-          (error.message.includes('já existe') ||
-           error.message.includes('já está cadastrada') ||
-           error.message.includes('duplicate key'))) {
-        console.log("Detectado erro de duplicata (criar por CNPJ), abrindo dialog")
-        setDuplicateError(`A empresa com CNPJ ${cnpj} já está cadastrada no sistema.`)
-        setShowDuplicateDialog(true)
-      }
-      // Outros erros já são tratados pelo hook useEmpresas
-    }
-  }
 
   return (
     <SidebarWrapper>
@@ -246,59 +224,6 @@ export default function NovaEmpresaPage() {
           </div>
 
           <div className="grid gap-6 max-w-6xl">
-            {/* Consulta CNPJ */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Search className="h-5 w-5" />
-                  Consultar CNPJ
-                </CardTitle>
-                <CardDescription>
-                  Digite um CNPJ para consultar os dados automaticamente ou preencha manualmente
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="cnpj-consulta">CNPJ</Label>
-                    <Input
-                      id="cnpj-consulta"
-                      value={cnpj}
-                      onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
-                      placeholder="00.000.000/0000-00"
-                      maxLength={18}
-                    />
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <Button 
-                      onClick={handleConsultarCNPJ} 
-                      disabled={loading}
-                      className="gap-2"
-                    >
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Search className="h-4 w-4" />
-                      )}
-                      Consultar
-                    </Button>
-                    <Button 
-                      onClick={handleCriarPorCNPJ} 
-                      disabled={loading}
-                      variant="outline"
-                      className="gap-2"
-                    >
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Building2 className="h-4 w-4" />
-                      )}
-                      Criar Direto
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Formulário de Cadastro */}
             <Card>
@@ -318,13 +243,24 @@ export default function NovaEmpresaPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="cnpj">CNPJ *</Label>
-                      <Input
-                        id="cnpj"
-                        value={formData.cnpj}
-                        onChange={(e) => updateFormData('cnpj', formatCNPJ(e.target.value))}
-                        placeholder="00.000.000/0000-00"
-                        maxLength={18}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="cnpj"
+                          value={formData.cnpj}
+                          onChange={(e) => updateFormData('cnpj', formatCNPJ(e.target.value))}
+                          placeholder="00.000.000/0000-00"
+                          maxLength={18}
+                          disabled={isLoadingCnpj}
+                        />
+                        {isLoadingCnpj && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Os dados serão preenchidos automaticamente quando você completar o CNPJ
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="inscricao_estadual">Inscrição Estadual</Label>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ArrowLeft, Building2, Loader2, Save } from "lucide-react"
@@ -105,16 +105,8 @@ export default function NovaEmpresaPage() {
     dados_suframa: []
   })
 
-  // Auto-search CNPJ when user completes 14 digits
-  useEffect(() => {
-    const cnpjDigits = formData.cnpj.replace(/\D/g, "")
-    if (cnpjDigits.length === 14 && !isLoadingCnpj) {
-      handleAutoSearchCNPJ(cnpjDigits)
-    }
-  }, [formData.cnpj])
-
   // Function to auto-search CNPJ data
-  const handleAutoSearchCNPJ = async (cnpjDigits: string) => {
+  const handleAutoSearchCNPJ = useCallback(async (cnpjDigits: string) => {
     setIsLoadingCnpj(true)
     try {
       const data = await consultarCnpj(cnpjDigits)
@@ -159,7 +151,15 @@ export default function NovaEmpresaPage() {
     } finally {
       setIsLoadingCnpj(false)
     }
-  }
+  }, [])
+
+  // Auto-search CNPJ when user completes 14 digits
+  useEffect(() => {
+    const cnpjDigits = formData.cnpj.replace(/\D/g, "")
+    if (cnpjDigits.length === 14 && !isLoadingCnpj) {
+      handleAutoSearchCNPJ(cnpjDigits)
+    }
+  }, [formData.cnpj, isLoadingCnpj, handleAutoSearchCNPJ])
 
   // Função para formatar CNPJ
   const formatCNPJ = (value: string) => {

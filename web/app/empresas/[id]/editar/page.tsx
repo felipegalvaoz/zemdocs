@@ -92,13 +92,13 @@ export default function EditarEmpresaPage() {
 
   if (loading && !empresa) {
     return (
-      <SidebarProvider>
+      <SidebarWrapper>
         <SidebarInset>
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         </SidebarInset>
-      </SidebarProvider>
+      </SidebarWrapper>
     )
   }
 
@@ -111,8 +111,8 @@ export default function EditarEmpresaPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/empresas">
-                    Empresas
+                  <BreadcrumbLink asChild>
+                    <Link href="/empresas">Empresas</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
